@@ -1,0 +1,21 @@
+{
+  "project_id": "4020-NM",
+  "project_name": "Печной комплекс ПЕЧНИК-НОВОСИБ",
+  "author": "Александр",
+  "version": "v40.0",
+  "status": "STAGE_ROWS_FULLY_CONTROLLED",
+  "total_rows": 54,
+  "constants_and_physics": {
+    "oven_seam_mm": 10,
+    "shamo_seam_mm": 4,
+    "thermocompensation_mm": 10
+  },
+  "metrics": {
+    "brick_red_total_pcs": 1320,
+    "brick_shamot_total_pcs": 154,
+    "table_top_pure_area_sqm": 3.47,
+    "last_updated": "30.05.2026 в 18:27:19",
+    "last_ctrl_s_sync": "30.05.2026 в 19:26:59",
+    "distributed_bricks_count": 1489
+  }
+}
