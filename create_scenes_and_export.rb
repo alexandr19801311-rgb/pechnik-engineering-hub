@@ -28,7 +28,7 @@ module PechnikEngineeringHub
         scenes = model.pages
 
         puts "🧹 Шаг 1: Очистка старых сцен..."
-        scenes.to_a.reverse_each { |scene| scenes.erase(scene) }
+        scenes.to_a.reverse_each { |scene| scenes.erase(scene) } 
 
         init_scene = scenes.add("00_Базовый_Ракурс")
         scenes.selected_page = init_scene
@@ -119,131 +119,91 @@ module PechnikEngineeringHub
       # ========================================================================
       # ЗАДАЧА 2: ТОТАЛЬНЫЙ СИНТЕЗ ОБЩЕЙ СПЕЦИФИКАЦИИ С ПОРЯДОВЫМ УЧЕТОМ v68.8
       # ========================================================================
-      def export_materials_specification
-        ensure_project_folders
-        model = Sketchup.active_model
+  def export_materials_specification
+    ensure_project_folders
+    model = Sketchup.active_model
+
+    @facade_bricks = Hash.new(0)
+    @building_bricks = Hash.new(0)
+    @refractory_bricks = Hash.new(0)
+    @iron_hardware = Hash.new(0)
+    @total_finish_table_area = 0.0
+    @row_brick_matrix = Hash.new { |h, k| h[k] = Hash.new(0) }
+
+    # Рекурсивный сканер геометрии внутри одного конкретного ряда
+    scan_entities = ->(entities, current_row, transform = Geom::Transformation.new) {
+      entities.each do |instance|
+        next unless instance.is_a?(Sketchup::ComponentInstance) || instance.is_a?(Sketchup::Group)
         
-        # Хранилища для палитр и порядового учета
-        @facade_bricks = Hash.new(0)
-        @building_bricks = Hash.new(0)
-        @refractory_bricks = Hash.new(0)
-        @iron_hardware = Hash.new(0)
-        @total_finish_table_area = 0.0
+        layer_name = instance.layer.name.downcase
+        combined_transform = transform * (instance.respond_to?(:transformation) ? instance.transformation : Geom::Transformation.new)
         
-        # Матрица порядового расхода: Номер ряда -> { Тип кирпича -> Количество }
-        @row_brick_matrix = Hash.new { |h, k| h[k] = Hash.new(0) }
+        if instance.respond_to?(:definition)
+          def_name = instance.definition.name
+          clean_name = def_name.gsub(/#\d+/, '').strip
+          clean_name_down = clean_name.downcase
 
-        scan_spec = ->(instance, current_row = nil, transform = Geom::Transformation.new) {
-          layer_name = instance.layer.name.downcase
-          
-          # Ловим номер ряда из иерархии тегов
-          if layer_name =~ /row_(\d{1,2})/ || layer_name =~ /ряд_(\d{1,2})/
-            current_row = $1.to_i
-          end
-
-          combined_transform = transform * (instance.respond_to?(:transformation) ? instance.transformation : Geom::Transformation.new)
-
-          if instance.respond_to?(:definition)
-            def_name = instance.definition.name
-            clean_name = def_name.gsub(/#\d+/, '').strip
-            clean_name_down = clean_name.downcase
-
-            # 🔥 ТОЧНЫЙ СЪЕМ ПЛОЩАДИ: Заходим внутрь групп finish_table и меряем верхние грани face
-            if layer_name.include?('finish_table') || clean_name_down.include?('finish_table') || clean_name_down.include?('столешниц')
-              instance.definition.entities.each do |e|
-                if e.is_a?(Sketchup::Face)
-                  # Проверяем, что грань смотрит вверх (горизонтальная плоскость столешницы)
-                  global_normal = e.normal.transform(combined_transform)
-                  if global_normal.z > 0.99
-                    # Считаем масштаб осей без возведения массивов в степень
-                    t_arr = combined_transform.to_a
-                    s_x = Math.sqrt(t_arr[0]**2 + t_arr[1]**2 + t_arr[2]**2)
-                    s_y = Math.sqrt(t_arr[4]**2 + t_arr[5]**2 + t_arr[6]**2)
-                    # area дает дюймы2, умножаем на масштаб и переводим в м2
-                    @total_finish_table_area += (e.area * s_x * s_y) * 0.00064516
-                  end
-                end
-              end
-
-            elsif layer_name.include?('palette_brick_facade')
-              @facade_bricks[clean_name] += 1
-              if current_row
-                len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                @row_brick_matrix[current_row]["LF"] += (len > 120) ? 1.0 : 0.5
-              end
-
-            elsif layer_name.include?('palette_brick_building')
-              @building_bricks[clean_name] += 1
-              if current_row
-                len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                @row_brick_matrix[current_row]["SP"] += (len > 120) ? 1.0 : 0.5
-              end
-
-            elsif layer_name.include?('palette_brick_refractory')
-              @refractory_bricks[clean_name] += 1
-              if current_row
-                len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                @row_brick_matrix[current_row]["SH8"] += (len > 124) ? 1.0 : 0.5
-              end
-
-            elsif layer_name.include?('palette_iron')
-              @iron_hardware[clean_name] += 1
-              
-            elsif clean_name =~ /^(LF|SP|SH8)/ || clean_name_down.include?('кирпич') || clean_name_down.include?('шб')
-              if clean_name =~ /^LF/ || clean_name_down.include?('лицевой')
-                @facade_bricks[clean_name] += 1
-                if current_row
-                  len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                  @row_brick_matrix[current_row]["LF"] += (len > 120) ? 1.0 : 0.5
-                end
-              elsif clean_name =~ /^SH8/ || clean_name_down.include?('шб') || clean_name_down.include?('шамот')
-                @refractory_bricks[clean_name] += 1
-                if current_row
-                  len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                  @row_brick_matrix[current_row]["SH8"] += (len > 124) ? 1.0 : 0.5
-                end
-              else
-                @building_bricks[clean_name] += 1
-                if current_row
-                  len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-                  @row_brick_matrix[current_row]["SP"] += (len > 120) ? 1.0 : 0.5
+          # Сбор площади керамогранита столешниц
+          if layer_name.include?('finish_table') || clean_name_down.include?('finish_table')
+            instance.definition.entities.each do |e|
+              if e.is_a?(Sketchup::Face)
+                global_normal = e.normal.transform(combined_transform)
+                if global_normal.z > 0.99
+                  t_arr = combined_transform.to_a
+                  s_x = Math.sqrt(t_arr[0]**2 + t_arr[1]**2 + t_arr[2]**2)
+                  s_y = Math.sqrt(t_arr[4]**2 + t_arr[5]**2 + t_arr[6]**2)
+                  @total_finish_table_area += (e.area * s_x * s_y) * 0.00064516
                 end
               end
             end
+          # Подсчет кирпичей и литья с жесткой привязкой к перебираемому ряду
+          elsif layer_name.include?('palette_brick_facade') || clean_name_down.include?('лицевой') || clean_name =~ /^LF/
+            @facade_bricks[clean_name] += 1
+            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
+            @row_brick_matrix[current_row]["LF"] += (len > 120) ? 1.0 : 0.5
+          elsif layer_name.include?('palette_brick_building') || clean_name_down.include?('кирпич') || clean_name =~ /^SP/
+            @building_bricks[clean_name] += 1
+            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
+            @row_brick_matrix[current_row]["SP"] += (len > 120) ? 1.0 : 0.5
+          elsif layer_name.include?('palette_brick_refractory') || clean_name_down.include?('шамот') || clean_name =~ /^SH8/
+            @refractory_bricks[clean_name] += 1
+            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
+            @row_brick_matrix[current_row]["SH8"] += (len > 124) ? 1.0 : 0.5
+          elsif layer_name.include?('palette_iron') || clean_name_down.include?('дверка') || clean_name_down.include?('литье')
+            @iron_hardware[clean_name] += 1
           end
 
-          entities_to_parse = instance.respond_to?(:definition) ? instance.definition.entities : (instance.respond_to?(:entities) ? instance.entities : nil)
-          if entities_to_parse
-            entities_to_parse.each do |child|
-              if child.is_a?(Sketchup::ComponentInstance) || child.is_a?(Sketchup::Group)
-                scan_spec.call(child, current_row, combined_transform)
-              end
-            end
+          # Проваливаемся глубже внутрь вложенных групп
+          if instance.definition.entities
+            scan_entities.call(instance.definition.entities, current_row, combined_transform)
           end
-        }
+        end
+      end
+    }
 
-        model.active_entities.each { |e| scan_spec.call(e) if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group) }
-        output_path = "D:/pechnik-engineering-hub/02_specifications/specification_summary.txt"
-        total_lf_pcs = 0.0
-        total_sp_pcs = 0.0
-        total_sh8_pcs = 0.0
+    puts "🔍 Шаг 2: Послойный тотальный перебор 54 рядов модели..."
+    
+    # Жесткий цикл по каждому ряду исключает потерю данных
+    (1..54).each do |current_row|
+      # Собираем объекты, которые принадлежат текущему ряду по имени слоя
+      target_entities = model.active_entities.select do |e|
+        if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group)
+          ln = e.layer.name.downcase
+          ln =~ /row_#{current_row}\b/ || ln =~ /ряд_#{current_row}\b/ || ln =~ /row_0#{current_row}\b/ || ln =~ /ряд_0#{current_row}\b/
+        else
+          false
+        end
+      end
+      
+      scan_entities.call(target_entities, current_row) unless target_entities.empty?
+    end
 
-        File.open(output_path, "w:UTF-8") do |file|
-          file.puts "====================================================================================="
-          file.puts "          PRODUCTION SPECIFICATION REPORT (PALETTE LAYER SYSTEM v68.8)              "
-          file.puts "====================================================================================="
-          file.puts sprintf(" %-50s | %-15s | %-10s", "COMPONENT NAME (BY FACTORY PALETTE)", "FORMAT TYPE", "QTY (PCS)")
-          file.puts "-------------------------------------------------------------------------------------"
+    output_path = "D:/pechnik-engineering-hub/02_specifications/specification_summary.txt"
+    total_lf_pcs = 0.0
+    total_sp_pcs = 0.0
+    total_sh8_pcs = 0.0
 
-          unless @facade_bricks.empty?
-            file.puts "\n [ПАЛИТРА: ЛИЦЕВОЙ КИРПИЧ / PALETTE_BRICK_FACADE]"
-            @facade_bricks.keys.sort.each do |name|
-              len = name =~ /-(\d+)-/ ? $1.to_i : 250
-              label = (len > 120) ? "FULL (1.0)" : "HALF (0.5)"
-              file.puts sprintf(" %-50s | %-15s | %-10d", name, label, @facade_bricks[name])
-              total_lf_pcs += (len > 120) ? @facade_bricks[name] : (@facade_bricks[name] * 0.5)
-            end
-          end
+    File.open(output_path, "w:UTF-8") do |file|
 
           unless @building_bricks.empty?
             file.puts "\n [ПАЛИТРА: СТРОИТЕЛЬНЫЙ КИРПИЧ / PALETTE_BRICK_BUILDING]"
