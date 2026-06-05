@@ -90,13 +90,12 @@ def parse_specification(file_path)
 
   rows_data
 end
-
 # ==============================================================================
-# ЧАСТЬ 2: ГЕНЕРАТОР HTML И СТИЛИ ИНТЕРФЕЙСА (ИНТЕРФЕЙС ДЛЯ ПЛАНШЕТА)
+# ЧАСТЬ 2: ГЕНЕРАТОР HTML И CSS СТИЛИ ИНТЕРФЕЙСА С ПОДДЕРЖКОЙ НАКОПИТЕЛЬНОГО ИТОГА
 # ==============================================================================
 
 def generate_html
-  puts "[+] Старт сборки интерактивного веб-руководства v76.6..."
+  puts "[+] Старт сборки интерактивного веб-руководства v77.0..."
   rows_data = parse_specification(SPEC_FILE)
 
   if rows_data.nil? || rows_data.empty?
@@ -123,6 +122,7 @@ def generate_html
                 --text-main: #e1e1e6;
                 --text-muted: #a8a8b3;
                 --border: #29292e;
+                --success: #4caf50;
             }
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
             body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
@@ -132,7 +132,12 @@ def generate_html
             .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
             .sidebar-header h1 { font-size: 1.1rem; color: #fff; margin-bottom: 4px; }
             .sidebar-header p { font-size: 0.75rem; color: var(--text-muted); }
-            .row-selector { flex: 1; overflow-y: auto; padding: 10px; }
+            
+            /* Кнопка глобальной сводной сметы объекта */
+            .total-summary-btn { margin: 10px; padding: 12px; background-color: #202024; border: 1px dashed var(--accent); border-radius: 6px; color: #fff; text-align: center; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+            .total-summary-btn:hover { background-color: rgba(255, 87, 34, 0.1); }
+            
+            .row-selector { flex: 1; overflow-y: auto; padding: 0 10px 10px 10px; }
             
             /* Стили интерактивных кнопок порядовки */
             .row-btn { width: 100%; padding: 10px 12px; background: none; border: 1px solid transparent; border-radius: 6px; color: var(--text-main); text-align: left; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; margin-bottom: 4px; }
@@ -143,6 +148,12 @@ def generate_html
             /* Основная рабочая зона инженера */
             .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
             .top-bar { height: 50px; background-color: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+            
+            /* Переключатель режимов: Ряд / Накопительно */
+            .mode-switch { display: flex; background-color: #202024; padding: 3px; border-radius: 6px; border: 1px solid var(--border); }
+            .mode-tab { padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; border: none; color: var(--text-muted); background: none; }
+            .mode-tab.active { background-color: var(--accent); color: #fff; font-weight: bold; }
+            
             .nav-btn { padding: 6px 12px; background-color: var(--border); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.85rem; }
             .nav-btn:hover { background-color: var(--accent); }
             
@@ -150,6 +161,15 @@ def generate_html
             .viewer-container { flex: 1; display: flex; gap: 15px; padding: 15px; overflow: hidden; }
             .view-pane { flex: 1; background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
             .pane-title { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.75); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; z-index: 10; border-left: 3px solid var(--accent); }
+            
+            /* Модальное окно общей сметы */
+            .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+            .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; width: 500px; max-width: 90%; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+            .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+            .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
+            .modal-close:hover { color: var(--accent); }
+            .summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #29292e; font-size: 0.9rem; }
+            .summary-row strong { color: var(--accent); }
             
             /* Область рендера с центрированием картинок */
             .img-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0f0f11; padding: 10px; }
@@ -162,19 +182,25 @@ def generate_html
             .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
             .stat-value { font-size: 1.2rem; font-weight: bold; color: #fff; }
             .stat-value span { color: var(--accent); }
+            .stat-value.accum span { color: var(--success); }
         </style>
     </head>
     <body>
         <div class="sidebar">
             <div class="sidebar-header">
                 <h1>🚀 ПРОЕКТ 4020-НМ</h1>
-                <p>Полевой веб-интерфейс v76.6 | Александр</p>
+                <p>Полевой веб-интерфейс v77.0 | Александр</p>
             </div>
+            <div class="total-summary-btn" onclick="toggleModal(true)">📋 ОБЩАЯ СМЕТА ОБЪЕКТА</div>
             <div class="row-selector" id="rowSelector"></div>
         </div>
         <div class="main-content">
             <div class="top-bar">
                 <h2 id="currentRowTitle">Ряд --</h2>
+                <div class="mode-switch">
+                    <button class="mode-tab active" id="tabRow" onclick="setMode('row')">НА РЯД</button>
+                    <button class="mode-tab" id="tabAccum" onclick="setMode('accum')">НАКОПИТЕЛЬНО</button>
+                </div>
                 <div class="controls">
                     <button class="nav-btn" onclick="changeRow(-1)">◀ Пред.</button>
                     <button class="nav-btn" onclick="changeRow(1)">След. ▶</button>
@@ -192,6 +218,17 @@ def generate_html
             </div>
             <div class="info-panel" id="infoPanel"></div>
         </div>
+
+        <!-- Модальное окно сметы -->
+        <div class="modal-overlay" id="summaryModal" onclick="if(event.target===this) toggleModal(false)">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📊 Итоговая смета объекта</h3>
+                    <button class="modal-close" onclick="toggleModal(false)">&times;</button>
+                </div>
+                <div id="modalSummaryBody"></div>
+            </div>
+        </div>
   HTML
   # Формируем JavaScript-движок и закрываем HTML структуру
   html_javascript = <<~HTML
@@ -202,8 +239,9 @@ def generate_html
             // Получаем строго отсортированный массив номеров рядов
             const sortedRows = Object.keys(matrixData).map(Number).sort((a, b) => a - b);
             
-            // Задаем начальный рабочий ряд проекта
+            // Задаем начальные параметры рабочего режима
             let currentRow = sortedRows.length > 0 ? sortedRows[0] : 1;
+            let displayMode = 'row'; // Возможные режимы: 'row' (на ряд) или 'accum' (накопительно)
             
             const topPath = "../01_scenes/top_view/";
             const isoPath = "../01_scenes/iso_view/";
@@ -229,7 +267,44 @@ def generate_html
                     selector.appendChild(btn);
                 });
 
+                buildTotalSummary();
                 selectRow(currentRow);
+            }
+
+            // Математический расчет общей сметы объекта по всей матрице
+            function buildTotalSummary() {
+                let totalFacade = 0, totalStroit = 0, totalShamot = 0;
+                let castingList = new Set();
+
+                sortedRows.forEach(i => {
+                    const data = matrixData[i] || {};
+                    totalFacade += Number(data['facade']) || 0;
+                    totalStroit += Number(data['stroit']) || 0;
+                    totalShamot += Number(data['shamot']) || 0;
+                    
+                    if (data['casting'] && data['casting'] !== 'Нет') {
+                        data['casting'].split(',').forEach(c => castingList.add(c.strip ? c.strip() : c.trim()));
+                    }
+                });
+
+                const modalBody = document.getElementById('modalSummaryBody');
+                let castingHtml = '';
+                castingList.forEach(c => { castingHtml += '<div style="font-size:0.85rem;color:#ffb74d;">• ' + c + '</div>'; });
+                if(!castingHtml) castingHtml = '<div style="color:var(--text-muted)">Не обнаружено</div>';
+
+                modalBody.innerHTML = 
+                    '<div class="summary-row"><span>Облицовка (LF):</span><strong>' + totalFacade.toFixed(1) + ' шт.</strong></div>' +
+                    '<div class="summary-row"><span>Забутовка (SP):</span><strong>' + totalStroit.toFixed(1) + ' шт.</strong></div>' +
+                    '<div class="summary-row"><span>Шамот (SH8):</span><strong>' + totalShamot.toFixed(1) + ' шт.</strong></div>' +
+                    '<div class="summary-row" style="border-bottom:1px solid var(--border);margin-bottom:15px;"><span>Всего кирпича:</span><strong>' + (totalFacade + totalStroit + totalShamot).toFixed(1) + ' шт.</strong></div>' +
+                    '<h4 style="font-size:0.85rem;margin-bottom:8px;text-transform:uppercase;color:var(--text-muted)">Сводное литье на объекте:</h4>' + castingHtml;
+            }
+
+            function setMode(mode) {
+                displayMode = mode;
+                document.getElementById('tabRow').classList.toggle('active', mode === 'row');
+                document.getElementById('tabAccum').classList.toggle('active', mode === 'accum');
+                updateMetrics(currentRow);
             }
 
             function selectRow(rowNum) {
@@ -253,16 +328,45 @@ def generate_html
                 
                 updateMetrics(currentRow);
             }
-
+  HTML
+  # Финальный JavaScript-хвост и закрывающие теги HTML структуры
+  html_javascript_tail = <<~HTML
             function updateMetrics(rowNum) {
                 const panel = document.getElementById('infoPanel');
-                const data = matrixData[rowNum] || { 'facade': 0, 'stroit': 0, 'shamot': 0, 'casting': 'Нет' };
                 
+                let facadeQty = 0, stroitQty = 0, shamotQty = 0;
+                let castingText = 'Нет';
+
+                if (displayMode === 'row') {
+                    // Режим 1: Вывод расхода строго на один текущий ряд
+                    const data = matrixData[rowNum] || { 'facade': 0, 'stroit': 0, 'shamot': 0, 'casting': 'Нет' };
+                    facadeQty = Number(data['facade']) || 0;
+                    stroitQty = Number(data['stroit']) || 0;
+                    shamotQty = Number(data['shamot']) || 0;
+                    castingText = data['casting'] || 'Нет';
+                } else {
+                    // Режим 2: Динамический обсчет НАКОПИТЕЛЬНОГО ИТОГА с 1-го по выбранный ряд
+                    sortedRows.forEach(i => {
+                        if (i <= rowNum) {
+                            const data = matrixData[i] || {};
+                            facadeQty += Number(data['facade']) || 0;
+                            stroitQty += Number(data['stroit']) || 0;
+                            shamotQty += Number(data['shamot']) || 0;
+                        }
+                    });
+                    
+                    // Для литья выводим подсказку, где искать элементы
+                    castingText = 'Смотри послойно в общей смете объекта';
+                }
+                
+                const labelSuffix = displayMode === 'row' ? '' : ' (Всего)';
+                const valClass = displayMode === 'row' ? 'stat-value' : 'stat-value accum';
+
                 panel.innerHTML = 
-                    '<div class="stat-block"><div class="stat-label">Облицовка (Фасад)</div><div class="stat-value"><span>' + (data['facade'] || 0) + '</span> шт.</div></div>' +
-                    '<div class="stat-block"><div class="stat-label">Забутовка (Строит)</div><div class="stat-value"><span>' + (data['stroit'] || 0) + '</span> шт.</div></div>' +
-                    '<div class="stat-block"><div class="stat-label">Шамот</div><div class="stat-value"><span>' + (data['shamot'] || 0) + '</span> шт.</div></div>' +
-                    '<div class="stat-block"><div class="stat-label">Печное литье</div><div class="stat-value" style="font-size: 0.9rem; color: #ffb74d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + data['casting'] + '">' + (data['casting'] || '—') + '</div></div>';
+                    '<div class="stat-block"><div class="stat-label">Облицовка' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + facadeQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Забутовка' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + stroitQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Шамот' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + shamotQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Печное литье</div><div class="stat-value" style="font-size: 0.85rem; color: #ffb74d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + castingText + '">' + castingText + '</div></div>';
             }
 
             function changeRow(direction) {
@@ -277,10 +381,15 @@ def generate_html
                 img.classList.toggle('zoomed');
             }
 
+            function toggleModal(show) {
+                document.getElementById('summaryModal').style.display = show ? 'flex' : 'none';
+            }
+
             // Управление с клавиатуры ноутбука при проверке на объекте
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeRow(1);
                 if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeRow(-1);
+                if (e.key === 'Escape') toggleModal(false);
             });
 
             window.onload = init;
@@ -290,10 +399,11 @@ def generate_html
   HTML
 
   # Полная склейка макета и фиксация на диске
-  full_html = html_content + html_javascript
+  full_html = html_content + html_javascript + html_javascript_tail
   File.write(OUTPUT_HTML, full_html, mode: 'w:utf-8')
-  puts "[+] Полевой интерфейс v76.6 успешно сгенерирован: #{OUTPUT_HTML}"
+  puts "[+] Полевой интерфейс v77.0 успешно сгенерирован: #{OUTPUT_HTML}"
 end
 
 # Автоматический запуск сборщика при вызове скрипта
 generate_html
+
