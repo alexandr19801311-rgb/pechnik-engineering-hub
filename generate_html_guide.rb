@@ -12,6 +12,15 @@ BASE_DIR = "D:/pechnik-engineering-hub"
 SPEC_FILE = File.join(BASE_DIR, "02_specifications/specification_summary.txt")
 OUTPUT_HTML = File.join(BASE_DIR, "03_web_guide/index.html")
 
+# Справочник постоянных технологических заметок к рядам (Заполняется один раз)
+DEFAULT_NOTES = {
+  1  => "Фундаментный ряд. Проверить диагонали основания и горизонталь по уровню.",
+  2  => "Монтаж поддувальной дверцы. Уложить базальтовый картон 5 мм по периметру тоннеля.",
+  5  => "Формирование пода топливника. Выдерживать тепловой зазор между шамотом и облицовкой.",
+  12 => "Перекрытие топочной дверцы. Проверить надежность замкового кирпича.",
+  # Для остальных рядов, которых нет в этом списке, система сама напишет дефолтный текст.
+}
+
 def parse_specification(file_path)
   rows_data = {}
   current_section = :none
@@ -46,16 +55,13 @@ def parse_specification(file_path)
           
           raw_casting = parts.at(4) ? parts.at(4).gsub(/^[Лл]итье\s*:\s*/i, '').strip : "Нет"
           
-          # --- УМНЫЙ АЛГОРИТМ СУММИРОВАНИЯ ОДИНАКОВЫХ ПОЗИЦИЙ ЛИТЬЯ ---
+          # Группировка повторяющегося литья
           if raw_casting != "Нет" && !raw_casting.empty?
             items_counts = Hash.new(0)
-            
-            # Разбираем строчку по запятым на отдельные элементы
             raw_casting.split(',').each do |item|
               item.strip!
               next if item.empty?
               
-              # Вытаскиваем чистое имя и количество, если оно там есть: "Имя (1 шт)"
               if item =~ /^(.*)\s*\((\d+)\s*шт\)/i
                 name = $1.strip
                 count = $2.to_i
@@ -66,7 +72,6 @@ def parse_specification(file_path)
               items_counts[name] += count
             end
             
-            # Собираем обратно в красивую компактную строку с суммами
             grouped_arr = []
             items_counts.each do |name, total_qty|
               grouped_arr << "#{name} (#{total_qty} шт)"
@@ -75,13 +80,17 @@ def parse_specification(file_path)
           else
             casting_val = "Нет"
           end
-          # -------------------------------------------------------------
+
+          # --- ЖЕСТКАЯ ПРИВЯЗКА ВСТРОЕННЫХ ЗАМЕТОК ИЗ СПРАВОЧНИКА ---
+          # Ищем заметку в нашей карте DEFAULT_NOTES по номеру ряда
+          note_val = DEFAULT_NOTES.fetch(row_num, "Технические примечания к данному ряду отсутствуют.")
 
           rows_data[row_num] = {
             'facade' => facade_val,
             'stroit' => stroit_val,
             'shamot' => shamot_val,
-            'casting' => casting_val
+            'casting' => casting_val,
+            'note'    => note_val # Заметка улетает во фронтенд намертво
           }
         end
       end
@@ -91,11 +100,11 @@ def parse_specification(file_path)
   rows_data
 end
 # ==============================================================================
-# ЧАСТЬ 2: ГЕНЕРАТОР HTML И CSS СТИЛИ ИНТЕРФЕЙСА С ПОДДЕРЖКОЙ НАКОПИТЕЛЬНОГО ИТОГА
+# ЧАСТЬ 2: ГЕНЕРАТОР HTML И CSS СТИЛИ ИНТЕРФЕЙСА (v77.1 С ВСТРОЕННЫМИ СНОСКАМИ)
 # ==============================================================================
 
 def generate_html
-  puts "[+] Старт сборки интерактивного веб-руководства v77.0..."
+  puts "[+] Старт сборки интерактивного веб-руководства v77.1..."
   rows_data = parse_specification(SPEC_FILE)
 
   if rows_data.nil? || rows_data.empty?
@@ -106,7 +115,6 @@ def generate_html
   FileUtils.mkdir_p(File.dirname(OUTPUT_HTML))
   rows_json = JSON.generate(rows_data)
 
-  # Формируем структуру HTML документа и стилей
   html_content = <<~HTML
     <!DOCTYPE html>
     <html lang="ru">
@@ -123,33 +131,31 @@ def generate_html
                 --text-muted: #a8a8b3;
                 --border: #29292e;
                 --success: #4caf50;
+                --info-bg: #1e1e24;
             }
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
             body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
             
-            /* Боковая панель выбора рядов */
+            /* Боковая панель */
             .sidebar { width: 320px; background-color: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
             .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
             .sidebar-header h1 { font-size: 1.1rem; color: #fff; margin-bottom: 4px; }
             .sidebar-header p { font-size: 0.75rem; color: var(--text-muted); }
             
-            /* Кнопка глобальной сводной сметы объекта */
             .total-summary-btn { margin: 10px; padding: 12px; background-color: #202024; border: 1px dashed var(--accent); border-radius: 6px; color: #fff; text-align: center; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
             .total-summary-btn:hover { background-color: rgba(255, 87, 34, 0.1); }
             
             .row-selector { flex: 1; overflow-y: auto; padding: 0 10px 10px 10px; }
             
-            /* Стили интерактивных кнопок порядовки */
             .row-btn { width: 100%; padding: 10px 12px; background: none; border: 1px solid transparent; border-radius: 6px; color: var(--text-main); text-align: left; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; margin-bottom: 4px; }
             .row-btn:hover { background-color: var(--border); }
             .row-btn.active { background-color: var(--accent); color: #fff; font-weight: bold; }
             .row-btn .brick-count { font-size: 0.75rem; opacity: 0.8; }
             
-            /* Основная рабочая зона инженера */
+            /* Основная зона */
             .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
             .top-bar { height: 50px; background-color: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
             
-            /* Переключатель режимов: Ряд / Накопительно */
             .mode-switch { display: flex; background-color: #202024; padding: 3px; border-radius: 6px; border: 1px solid var(--border); }
             .mode-tab { padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; border: none; color: var(--text-muted); background: none; }
             .mode-tab.active { background-color: var(--accent); color: #fff; font-weight: bold; }
@@ -157,12 +163,26 @@ def generate_html
             .nav-btn { padding: 6px 12px; background-color: var(--border); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.85rem; }
             .nav-btn:hover { background-color: var(--accent); }
             
-            /* Экраны вывода графики (Top View / Iso View) */
-            .viewer-container { flex: 1; display: flex; gap: 15px; padding: 15px; overflow: hidden; }
+            /* Экраны чертежей */
+            .viewer-container { flex: 1; display: flex; gap: 15px; padding: 15px 15px 5px 15px; overflow: hidden; }
             .view-pane { flex: 1; background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
             .pane-title { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.75); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; z-index: 10; border-left: 3px solid var(--accent); }
             
-            /* Модальное окно общей сметы */
+            /* Виджет информационных сносок */
+            .note-container { height: 65px; margin: 0 15px 10px 15px; padding: 10px 15px; background-color: var(--info-bg); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 4px; display: flex; align-items: center; overflow-y: auto; }
+            .note-container.has-note { border-left-color: var(--accent); background-color: #1f1a16; }
+            .note-text { font-size: 0.85rem; line-height: 1.3; color: var(--text-main); }
+            .note-text span { font-weight: bold; color: var(--accent); margin-right: 5px; }
+
+            /* Нижний виджет подсчета материалов */
+            .info-panel { height: 90px; background-color: var(--bg-card); border-top: 1px solid var(--border); padding: 15px 20px; display: flex; gap: 30px; overflow-x: auto; }
+            .stat-block { display: flex; flex-direction: column; justify-content: center; min-width: 120px; }
+            .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
+            .stat-value { font-size: 1.2rem; font-weight: bold; color: #fff; }
+            .stat-value span { color: var(--accent); }
+            .stat-value.accum span { color: var(--success); }
+            
+            /* Модальное окно */
             .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
             .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; width: 500px; max-width: 90%; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
             .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
@@ -171,25 +191,16 @@ def generate_html
             .summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #29292e; font-size: 0.9rem; }
             .summary-row strong { color: var(--accent); }
             
-            /* Область рендера с центрированием картинок */
             .img-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0f0f11; padding: 10px; }
             .img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s; cursor: zoom-in; transform-origin: center center; }
             .img-wrapper img.zoomed { transform: scale(2.2); cursor: zoom-out; max-width: none; max-height: none; }
-            
-            /* Нижний виджет оперативного подсчета материалов на объекте */
-            .info-panel { height: 90px; background-color: var(--bg-card); border-top: 1px solid var(--border); padding: 15px 20px; display: flex; gap: 30px; overflow-x: auto; }
-            .stat-block { display: flex; flex-direction: column; justify-content: center; min-width: 120px; }
-            .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
-            .stat-value { font-size: 1.2rem; font-weight: bold; color: #fff; }
-            .stat-value span { color: var(--accent); }
-            .stat-value.accum span { color: var(--success); }
         </style>
     </head>
     <body>
         <div class="sidebar">
             <div class="sidebar-header">
                 <h1>🚀 ПРОЕКТ 4020-НМ</h1>
-                <p>Полевой веб-интерфейс v77.0 | Александр</p>
+                <p>Полевой веб-интерфейс v77.1 | Александр</p>
             </div>
             <div class="total-summary-btn" onclick="toggleModal(true)">📋 ОБЩАЯ СМЕТА ОБЪЕКТА</div>
             <div class="row-selector" id="rowSelector"></div>
@@ -206,6 +217,7 @@ def generate_html
                     <button class="nav-btn" onclick="changeRow(1)">След. ▶</button>
                 </div>
             </div>
+            
             <div class="viewer-container">
                 <div class="view-pane">
                     <div class="pane-title">ПЛАН (ТОП-ВЬЮ)</div>
@@ -216,10 +228,14 @@ def generate_html
                     <div class="img-wrapper"><img id="isoViewImg" src="" onclick="toggleZoom(this)"></div>
                 </div>
             </div>
+            
+            <div class="note-container" id="rowNoteBlock">
+                <div class="note-text" id="rowNoteText">Технические примечания к данному ряду отсутствуют.</div>
+            </div>
+            
             <div class="info-panel" id="infoPanel"></div>
         </div>
 
-        <!-- Модальное окно сметы -->
         <div class="modal-overlay" id="summaryModal" onclick="if(event.target===this) toggleModal(false)">
             <div class="modal-content">
                 <div class="modal-header">
@@ -241,7 +257,7 @@ def generate_html
             
             // Задаем начальные параметры рабочего режима
             let currentRow = sortedRows.length > 0 ? sortedRows[0] : 1;
-            let displayMode = 'row'; // Возможные режимы: 'row' (на ряд) или 'accum' (накопительно)
+            let displayMode = 'row'; 
             
             const topPath = "../01_scenes/top_view/";
             const isoPath = "../01_scenes/iso_view/";
@@ -283,7 +299,7 @@ def generate_html
                     totalShamot += Number(data['shamot']) || 0;
                     
                     if (data['casting'] && data['casting'] !== 'Нет') {
-                        data['casting'].split(',').forEach(c => castingList.add(c.strip ? c.strip() : c.trim()));
+                        data['casting'].split(',').forEach(c => castingList.add(c.trim ? c.trim() : c));
                     }
                 });
 
@@ -333,19 +349,32 @@ def generate_html
   html_javascript_tail = <<~HTML
             function updateMetrics(rowNum) {
                 const panel = document.getElementById('infoPanel');
+                const noteBlock = document.getElementById('rowNoteBlock');
+                const noteText = document.getElementById('rowNoteText');
                 
                 let facadeQty = 0, stroitQty = 0, shamotQty = 0;
                 let castingText = 'Нет';
+                
+                // Извлекаем примечание ряда из JSON
+                const currentData = matrixData[rowNum] || {};
+                const rowNote = currentData['note'] || 'Технические примечания к данному ряду отсутствуют.';
 
                 if (displayMode === 'row') {
-                    // Режим 1: Вывод расхода строго на один текущий ряд
-                    const data = matrixData[rowNum] || { 'facade': 0, 'stroit': 0, 'shamot': 0, 'casting': 'Нет' };
-                    facadeQty = Number(data['facade']) || 0;
-                    stroitQty = Number(data['stroit']) || 0;
-                    shamotQty = Number(data['shamot']) || 0;
-                    castingText = data['casting'] || 'Нет';
+                    facadeQty = Number(currentData['facade']) || 0;
+                    stroitQty = Number(currentData['stroit']) || 0;
+                    shamotQty = Number(currentData['shamot']) || 0;
+                    castingText = currentData['casting'] || 'Нет';
+                    
+                    // В режиме "НА РЯД" выводим встроенную сноску текущего ряда
+                    if (rowNote.includes('отсутствуют')) {
+                        noteBlock.classList.remove('has-note');
+                        noteText.innerHTML = rowNote;
+                    } else {
+                        noteBlock.classList.add('has-note');
+                        noteText.innerHTML = '<span>ИНФО:</span>' + rowNote;
+                    }
                 } else {
-                    // Режим 2: Динамический обсчет НАКОПИТЕЛЬНОГО ИТОГА с 1-го по выбранный ряд
+                    // Режим НАКОПИТЕЛЬНОГО ИТОГА
                     sortedRows.forEach(i => {
                         if (i <= rowNum) {
                             const data = matrixData[i] || {};
@@ -354,18 +383,20 @@ def generate_html
                             shamotQty += Number(data['shamot']) || 0;
                         }
                     });
-                    
-                    // Для литья выводим подсказку, где искать элементы
                     castingText = 'Смотри послойно в общей смете объекта';
+                    
+                    // В накопительном режиме временно переключаем подсказку виджета
+                    noteBlock.classList.remove('has-note');
+                    noteText.innerHTML = 'Включен режим накопительного итога с 1 по ' + rowNum + ' ряд. Сноски доступны в режиме "НА РЯД".';
                 }
                 
                 const labelSuffix = displayMode === 'row' ? '' : ' (Всего)';
                 const valClass = displayMode === 'row' ? 'stat-value' : 'stat-value accum';
 
                 panel.innerHTML = 
-                    '<div class="stat-block"><div class="stat-label">Облицовка' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + facadeQty.toFixed(1) + '</span> шт.</div></div>' +
-                    '<div class="stat-block"><div class="stat-label">Забутовка' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + stroitQty.toFixed(1) + '</span> шт.</div></div>' +
-                    '<div class="stat-block"><div class="stat-label">Шамот' + labelSuffix + '</div><div class="\s*' + valClass + '"><span>' + shamotQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Облицовка' + labelSuffix + '</div><div class="' + valClass + '"><span>' + facadeQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Забутовка' + labelSuffix + '</div><div class="' + valClass + '"><span>' + stroitQty.toFixed(1) + '</span> шт.</div></div>' +
+                    '<div class="stat-block"><div class="stat-label">Шамот' + labelSuffix + '</div><div class="' + valClass + '"><span>' + shamotQty.toFixed(1) + '</span> шт.</div></div>' +
                     '<div class="stat-block"><div class="stat-label">Печное литье</div><div class="stat-value" style="font-size: 0.85rem; color: #ffb74d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + castingText + '">' + castingText + '</div></div>';
             }
 
@@ -385,7 +416,6 @@ def generate_html
                 document.getElementById('summaryModal').style.display = show ? 'flex' : 'none';
             }
 
-            // Управление с клавиатуры ноутбука при проверке на объекте
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeRow(1);
                 if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeRow(-1);
@@ -401,9 +431,8 @@ def generate_html
   # Полная склейка макета и фиксация на диске
   full_html = html_content + html_javascript + html_javascript_tail
   File.write(OUTPUT_HTML, full_html, mode: 'w:utf-8')
-  puts "[+] Полевой интерфейс v77.0 успешно сгенерирован: #{OUTPUT_HTML}"
+  puts "[+] Полевой интерфейс v77.1 успешно сгенерирован: #{OUTPUT_HTML}"
 end
 
 # Автоматический запуск сборщика при вызове скрипта
 generate_html
-
