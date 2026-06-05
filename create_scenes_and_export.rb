@@ -130,70 +130,99 @@ module PechnikEngineeringHub
     @total_finish_table_area = 0.0
     @row_brick_matrix = Hash.new { |h, k| h[k] = Hash.new(0) }
 
-    # Рекурсивный сканер геометрии внутри одного конкретного ряда
-    scan_entities = ->(entities, current_row, transform = Geom::Transformation.new) {
-      entities.each do |instance|
-        next unless instance.is_a?(Sketchup::ComponentInstance) || instance.is_a?(Sketchup::Group)
-        
-        layer_name = instance.layer.name.downcase
-        combined_transform = transform * (instance.respond_to?(:transformation) ? instance.transformation : Geom::Transformation.new)
-        
-        if instance.respond_to?(:definition)
-          def_name = instance.definition.name
-          clean_name = def_name.gsub(/#\d+/, '').strip
-          clean_name_down = clean_name.downcase
+    # Сверхнадёжный сквозной трекер под русские имена компонентов Александра
+    scan_hierarchy = ->(instance, current_row = nil, current_palette = nil, transform = Geom::Transformation.new) {
+      layer_name = instance.layer.name.downcase
+      combined_transform = transform * (instance.respond_to?(:transformation) ? instance.transformation : Geom::Transformation.new)
 
-          # Сбор площади керамогранита столешниц
-          if layer_name.include?('finish_table') || clean_name_down.include?('finish_table')
-            instance.definition.entities.each do |e|
-              if e.is_a?(Sketchup::Face)
-                global_normal = e.normal.transform(combined_transform)
-                if global_normal.z > 0.99
-                  t_arr = combined_transform.to_a
-                  s_x = Math.sqrt(t_arr[0]**2 + t_arr[1]**2 + t_arr[2]**2)
-                  s_y = Math.sqrt(t_arr[4]**2 + t_arr[5]**2 + t_arr[6]**2)
-                  @total_finish_table_area += (e.area * s_x * s_y) * 0.00064516
-                end
-              end
-            end
-          # Подсчет кирпичей и литья с жесткой привязкой к перебираемому ряду
-          elsif layer_name.include?('palette_brick_facade') || clean_name_down.include?('лицевой') || clean_name =~ /^LF/
-            @facade_bricks[clean_name] += 1
-            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-            @row_brick_matrix[current_row]["LF"] += (len > 120) ? 1.0 : 0.5
-          elsif layer_name.include?('palette_brick_building') || clean_name_down.include?('кирпич') || clean_name =~ /^SP/
-            @building_bricks[clean_name] += 1
-            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-            @row_brick_matrix[current_row]["SP"] += (len > 120) ? 1.0 : 0.5
-          elsif layer_name.include?('palette_brick_refractory') || clean_name_down.include?('шамот') || clean_name =~ /^SH8/
-            @refractory_bricks[clean_name] += 1
-            len = clean_name =~ /-(\d+)-/ ? $1.to_i : 250
-            @row_brick_matrix[current_row]["SH8"] += (len > 124) ? 1.0 : 0.5
-          elsif layer_name.include?('palette_iron') || clean_name_down.include?('дверка') || clean_name_down.include?('литье')
-            @iron_hardware[clean_name] += 1
+      # 1. Считываем РЯД
+      if layer_name =~ /row_(\d+)/ || layer_name =~ /ряд_(\d+)/
+        current_row = $1.to_i
+      end
+
+      # 2. Считываем ПАЛИТРУ по слоям
+      if layer_name.include?('palette_brick_facade') || layer_name.include?('лицевой')
+        current_palette = :facade
+      elsif layer_name.include?('palette_brick_building') || layer_name.include?('строительный') || layer_name.include?('полнотелый')
+        current_palette = :building
+      elsif layer_name.include?('palette_brick_refractory') || layer_name.include?('шамот') || layer_name.include?('шб')
+        current_palette = :refractory
+      elsif layer_name.include?('palette_iron') || layer_name.include?('литье') || layer_name.include?('дверца')
+        current_palette = :iron
+      end
+
+      if instance.respond_to?(:definition)
+        def_name = instance.definition.name
+        clean_name = def_name.gsub(/#\d+/, '').strip
+        clean_name_down = clean_name.downcase
+
+        # Переопределение палитры по РЕАЛЬНЫМ именам компонентов
+        if clean_name_down.include?('лицевой') || clean_name =~ /^LF/
+          current_palette = :facade
+        elsif clean_name_down.include?('полнотелый') || clean_name =~ /^SP/
+          current_palette = :building
+        elsif clean_name_down.include?('шб-') || clean_name_down.include?('шамот') || clean_name =~ /^SH8/
+          current_palette = :refractory
+        elsif clean_name_down.include?('дверца') || clean_name_down.include?('чугун') || clean_name_down.include?('колосник')
+          current_palette = :iron
+        end
+
+        # # 3. ФИКСИРУЕМ ОБЪЕКТ, ЕСЛИ ДЛЯ НЕГО ОПРЕДЕЛЕНА ПАЛИТРА
+        if current_palette
+          len = 250
+          if clean_name =~ /\/\s*(\d+)\s*\//
+            len = $1.to_i
+          elsif clean_name =~ /-(\d+)-/
+            len = $1.to_i
           end
+          
+          weight = (len > 140) ? 1.0 : 0.5
 
-          # Проваливаемся глубже внутрь вложенных групп
-          if instance.definition.entities
-            scan_entities.call(instance.definition.entities, current_row, combined_transform)
+          case current_palette
+          when :facade
+            @facade_bricks[clean_name] += 1
+            @row_brick_matrix[current_row]["LF"] += weight if current_row
+          when :building
+            @building_bricks[clean_name] += 1
+            @row_brick_matrix[current_row]["SP"] += weight if current_row
+          when :refractory
+            @refractory_bricks[clean_name] += 1
+            @row_brick_matrix[current_row]["SH8"] += weight if current_row
+          when :iron
+            @iron_hardware[clean_name] += 1
+            @row_brick_matrix[current_row]["casting"] = clean_name if current_row
+          end
+        end
+
+        # Обработка столешниц керамогранита
+        if layer_name.include?('finish_table') || clean_name_down.include?('finish_table')
+          instance.definition.entities.each do |e|
+            if e.is_a?(Sketchup::Face) && e.normal.transform(combined_transform).z > 0.99
+              t_arr = combined_transform.to_a
+              s_x = Math.sqrt(t_arr[0]**2 + t_arr[1]**2 + t_arr[2]**2)
+              s_y = Math.sqrt(t_arr[4]**2 + t_arr[5]**2 + t_arr[6]**2)
+              @total_finish_table_area += (e.area * s_x * s_y) * 0.00064516
+            end
+          end
+        end
+
+        # 4. СПУСКАЕМСЯ НА ЛЮБУЮ ГЛУБИНУ ВЛОЖЕННОСТИ
+        if instance.definition.entities
+          instance.definition.entities.each do |child|
+            if child.is_a?(Sketchup::ComponentInstance) || child.is_a?(Sketchup::Group)
+              scan_hierarchy.call(child, current_row, current_palette, combined_transform)
+            end
           end
         end
       end
     }
 
-    puts "🔍 Шаг 2: Послойный тотальный перебор 54 рядов модели..."
-    
-    # Жесткий цикл по каждому ряду исключает потерю данных
-    (1..54).each do |current_row|
-      # Собираем объекты, которые принадлежат текущему ряду по имени слоя
-      target_entities = model.active_entities.select do |e|
-        if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group)
-          ln = e.layer.name.downcase
-          ln =~ /row_#{current_row}\b/ || ln =~ /ряд_#{current_row}\b/ || ln =~ /row_0#{current_row}\b/ || ln =~ /ряд_0#{current_row}\b/
-        else
-          false
-        end
+    puts "🔍 Шаг 2: Сквозной иерархический анализ порядовки по вашей структуре групп..."
+    model.active_entities.each do |e|
+      if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group)
+        scan_hierarchy.call(e)
       end
+    end
       
       scan_entities.call(target_entities, current_row) unless target_entities.empty?
     end
