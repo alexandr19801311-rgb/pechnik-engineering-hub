@@ -78,8 +78,34 @@ module PechnikEngineeringHub
       .foundation-container .img-wrapper { height: 110mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
       
       /* 3. КОМПАКТНЫЙ МАСШТАБ ДЛЯ ДВОЙНЫХ КАРТ И РАЗРЕЗОВ (Стр. 4, 5, 6) */
-      .materials-container { display: flex; flex-direction: column; gap: 4mm; width: 100%; }
-      .materials-container .img-wrapper { height: 62mm !important; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; }
+/* ГОРИЗОНТАЛЬНАЯ СЕТКА БОК О БОК ДЛЯ КАРТ И РАЗРЕЗОВ v77.78 */
+.materials-container { 
+    display: flex; 
+    flex-direction: row; /* Выстраиваем окна горизонтально */
+    gap: 6mm; 
+    width: 100%; 
+    height: 140mm; /* Задаем жесткую высоту рабочей зоны */
+    box-sizing: border-box;
+}
+
+.materials-container .image-box-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.materials-container .img-wrapper { 
+    flex: 1;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    overflow: hidden; 
+    border: 1px solid #bdc3c7; 
+    border-radius: 6px; 
+    background: #ffffff; 
+    height: 125mm !important; /* Картинки станут крупными и высокими! */
+}
       .img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
       .image-title { font-size: 9.5pt; color: #7f8c8d; text-transform: uppercase; margin-bottom: 2mm; font-weight: bold; }
 
@@ -130,26 +156,62 @@ module PechnikEngineeringHub
             "<h1>Общий вид готового комплекса</h1><div class='img-wrapper' style='height:145mm; border:1px solid #bdc3c7; border-radius:6px; background:#fff;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/main_preview.png'></div>" \
             "<div class='page-number'>3</div></div>"
 
-    # Стр. 4: Карта материалов — Керамика
-    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 4</span><span>Карта материалов</span></div>" \
-            "<h1>Карта материалов — Облицовка и строительный кирпич</h1><div class='materials-container'>" \
-            "  <div class='image-title'>Лицевой фасадный кирпич (LF)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_facade.png'></div>" \
-            "  <div class='image-title'>Строительный кирпич наполнения (SP)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_building.png'></div>" \
-            "</div><div class='page-number'>4</div></div>"
+    # ==============================================================================
+    # СТР. 4: КАРТА МАТЕРИАЛОВ — КЕРАМИКА (ПОСТРОЧНЫЙ ХОД v77.78)
+    # ==============================================================================
+    html << "<div class='page'>"
+    html << "  <div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 4</span><span>Карта материалов</span></div>"
+    html << "  <h1>Карта материалов — Облицовка и строительный кирпич</h1>"
+    html << "  <div style='display: flex !important; flex-direction: row !important; gap: 6mm; width: 100%; height: 140mm; box-sizing: border-box;'>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Лицевой фасадный кирпич (LF)</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_facade.png'></div>"
+    html << "    </div>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Строительный кирпич наполнения (SP)</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_building.png'></div>"
+    html << "    </div>"
+    html << "  </div>"
+    html << "  <div class='page-number'>4</div>"
+    html << "</div>"
 
-    # Стр. 5: Карта материалов — Шамот и литье
-    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 5</span><span>Карта материалов</span></div>" \
-            "<h1>Карта материалов — Шамот и печная фурнитура</h1><div class='materials-container'>" \
-            "  <div class='image-title'>Шамотное ядро топки (ШБ-8 / SH8)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_firebrick.png'></div>" \
-            "  <div class='image-title'>Печное чугунное литье и узлы монтажа</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_iron.png'></div>" \
-            "</div><div class='page-number'>5</div></div>"
+    # ==============================================================================
+    # СТР. 5: КАРТА МАТЕРИАЛОВ — ШАМОТ И ЛИТЬЕ (ПОСТРОЧНЫЙ ХОД v77.78)
+    # ==============================================================================
+    html << "<div class='page'>"
+    html << "  <div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 5</span><span>Карта материалов</span></div>"
+    html << "  <h1>Карта материалов — Шамот и печная фурнитура</h1>"
+    html << "  <div style='display: flex !important; flex-direction: row !important; gap: 6mm; width: 100%; height: 140mm; box-sizing: border-box;'>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Шамотное ядро топки (ШБ-8 / SH8)</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_firebrick.png'></div>"
+    html << "    </div>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Печное чугунное литье и узлы монтажа</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_iron.png'></div>"
+    html << "    </div>"
+    html << "  </div>"
+    html << "  <div class='page-number'>5</div>"
+    html << "</div>"
 
-    # Стр. 6: Технические разрезы бок о бок
-    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 6</span><span>Конструктивные сечения</span></div>" \
-            "<h1>Технические разрезы комплекса бок о бок</h1><div class='materials-container'>" \
-            "  <div class='image-title'>Продольный разрез (Сечение 1)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_1.png'></div>" \
-            "  <div class='image-title'>Поперечный разрез (Сечение 2)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_2.png'></div>" \
-            "</div><div class='page-number'>6</div></div>"
+    # ==============================================================================
+    # СТР. 6: ТЕХНИЧЕСКИЕ РАЗРЕЗЫ БОК О БОК (ПОСТРОЧНЫЙ ХОД v77.78)
+    # ==============================================================================
+    html << "<div class='page'>"
+    html << "  <div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 6</span><span>Конструктивные сечения</span></div>"
+    html << "  <h1>Технические разрезы комплекса бок о бок</h1>"
+    html << "  <div style='display: flex !important; flex-direction: row !important; gap: 6mm; width: 100%; height: 140mm; box-sizing: border-box;'>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Продольный разрез (Сечение 1)</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_1.png'></div>"
+    html << "    </div>"
+    html << "    <div style='flex: 1; display: flex; flex-direction: column; height: 100%;'>"
+    html << "      <div class='image-title'>Поперечный разрез (Сечение 2)</div>"
+    html << "      <div class='img-wrapper' style='flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; height: 125mm !important;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_2.png'></div>"
+    html << "    </div>"
+    html << "  </div>"
+    html << "  <div class='page-number'>6</div>"
+    html << "</div>"
 
     # Стр. 7: Инженерный регламент
     html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 7</span><span>Регламент кладки</span></div>" \
