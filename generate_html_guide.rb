@@ -1,350 +1,251 @@
 # frozen_string_literal: true
+# Encoding: UTF-8
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ — ОБЪЕДИНЕННЫЙ СБОРЩИК АЛЬБОМА v77.49 (УНИВЕРСАЛЬНЫЙ)
-# ЧАСТЬ 1 ИЗ 4: ИНИЦИАЛИЗАЦИЯ И ДИНАМИЧЕСКИЙ ОПРЕДЕЛИТЕЛЬ ИМЕНИ ИЗ МОДЕЛИ SKP
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v77.78 — ГЕНЕРАТОР ПОЛНОГО HTML-АЛЬБОМА (A4 LANDSCAPE)
+# ЧАСТЬ 2.1: ИНИЦИАЛИЗАЦИЯ И СКВОЗНОЙ ПАРСЕР СМЕТЫ С ДИСКА D
 # ==============================================================================
 
 require 'fileutils'
+require 'sketchup'
 
 module PechnikEngineeringHub
-  module HtmlGenerator
-    # Технологические примечания для порядовок
-    DEFAULT_NOTES = {
-      1 => "Основание комплекса. Выкладывается строго по уровню. Проверка диагоналей обязательна.",
-      2 => "Второй ряд основания. Начало формирования поддувального канала и нижних подверток.",
-      3 => "Формирование зольника и фиксация нижних прочистных дверок. Герметизация стыков шнуром.",
-      4 => "Сужение поддувального канала. Подготовка ложа для укладки колосниковой решетки.",
-      5 => "Установка топочной дверцы. Обеспечить обязательный тепловой зазор 5 мм по всему периметру.",
-      6 => "Начало футеровки топливника шамотным кирпичом. Шамот и красный кирпич НЕ перевязывать!",
-      12 => "Перекрытие топочной камеры. Использовать шамотный кирпич ШБ-8 на ребро на мертель.",
-      38 => "Установка задвижки летнего хода. Контроль плавности хода полотна внутри пазов кладки.",
-      54 => "Финальный ряд перекрытия печи. Выравнивание плоскости под начало разделки потолочного прохода."
-    }.freeze
-
-    def self.read_specification
-      spec_path = "D:/pechnik-engineering-hub/02_specifications/specification_summary.txt"
-      
-      # Защитный резервный блок (если текстовый маркер из модели еще не выгружен)
-      data = {
-        total_lf: 0, total_sp: 0, total_sh8: 0, total_finish_table: 0.0,
-        bricks_per_row: {}, iron_materials: {}, mixtures: {},
-        metadata: { project_code: "НОВАЯ МОДЕЛЬ", version: "v1.0", author: "Александр", date: "06.06.2026" }
-      }
-
-      (1..54).each { |r| data[:bricks_per_row][r] = { lf: 0, sp: 0, sh8: 0, iron: nil } }
-
-      if File.exist?(spec_path)
-        current_section = nil
-        File.foreach(spec_path, chomp: true) do |line|
-          cleaned = line.strip
-          next if cleaned.empty?
-
-          # ИНЖЕНЕРНЫЙ АВТО-МАРКЕР Способа А: Подхватывает Sketchup.active_model.title из файла отчета
-          if cleaned =~ /^\[MODEL_TITLE\]\s*:\s*(.+)/
-            data[:metadata][:project_code] = $1.strip
-            next
-          end
-
-          next if cleaned.start_with?('-') || cleaned.start_with?('=')
-
-          if cleaned.include?("TOTAL PRODUCTION SPECIFICATION") then current_section = :prod; next
-          elsif cleaned.include?("МАТРИЦА ПОРЯДОВОГО РАСХОДА") then current_section = :matrix; next
-          elsif cleaned.include?("ПЕЧНОЕ ЛИТЬЕ И ИНЖЕНЕРНОЕ ОБОРУДОВАНИЕ") then current_section = :iron; next
-          elsif cleaned.include?("ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ") then current_section = :totals; next
-          elsif cleaned.include?("ПРАКТИЧЕСКИЙ РАСХОД СМЕСЕЙ") then current_section = :mix; next
-          end
-
-          case current_section
-          when :prod
-            if cleaned =~ /^row_(\d+)\s*\|\s*([A-Z0-9]+)-.*?\|\s*.*?\|\s*(\d+)/
-              r_num, sku, qty = $1.to_i, $2, $3.to_i
-              data[:bricks_per_row][r_num][sku.downcase.to_sym] += qty if r_num.between?(1, 54) && data[:bricks_per_row][r_num][sku.downcase.to_sym]
-            end
-          when :matrix
-            if cleaned =~ /^(?:Ряд|РЯД)\s*(\d+)\s*\|\s*[\d.]+\s*\|\s*[\d.]+\s*\|\s*[\d.]+\s*\|\s*(.*)/
-              r_num, iron_text = $1.to_i, $2.to_s.gsub("Литье:", "").strip
-              data[:bricks_per_row][r_num][:iron] = iron_text.split(',').map(&:strip).uniq.join(', ') if r_num.between?(1, 54) && iron_text != "Нет"
-            end
-          when :iron
-            if cleaned =~ /^(.+?)\s*\|\s*(\d+)/
-              name = $1.strip
-              data[:iron_materials][name] = $2.to_i unless ["Компонент", "Различие", "Внешняя оболочка"].include?(name)
-            end
-          when :totals
-            if cleaned =~ /FINISH-TABLE.*?:\s*([\d.]+)\s*m2/
-              data[:total_finish_table] = $1.to_f
-            end
-          when :mix
-            data[:mixtures][$1.strip] = "#{$2} кг" if cleaned =~ /^(.+?)\s*:\s*([\d.]+)\s*кг/
-          end
-        end
-
-        (1..54).each do |r|
-          data[:total_lf] += data[:bricks_per_row][r][:lf]
-          data[:total_sp] += data[:bricks_per_row][r][:sp]
-          data[:total_sh8] += data[:bricks_per_row][r][:sh8]
-        end
-      end
-      data
+  def self.generate_html_guide
+    model = Sketchup.active_model
+    model_title = model.title.empty? ? "Барбекю комплекс Солнечный терракот" : model.title
+    
+    spec_path = "D:/pechnik-engineering-hub/02_specifications/specification_summary.txt"
+    output_html_path = "D:/pechnik-engineering-hub/03_web_guide/index.html"
+    
+    unless File.exist?(spec_path)
+      UI.messagebox("ОШИБКА: Сначала запустите сметный калькулятор\n(export_materials_specification), файла сметы нет!")
+      return
     end
-    # ==============================================================================
-    # ЧАСТЬ 2.1 ИЗ 4: СВЕТЛАЯ КИРПИЧНО-ТЕРРАКОТОВАЯ СТИЛИСТИКА АЛЬБОМА
-    # ==============================================================================
-    def self.generate
-      p_data = read_specification
 
-      styles = '
-        @page { size: A4 landscape; margin: 0; }
-        body { font-family: "Segoe UI", Arial, sans-serif; color: #2c3e50; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .page { page-break-after: always; page-break-inside: avoid; position: relative; height: 210mm; width: 297mm; box-sizing: border-box; padding: 12mm 15mm; overflow: hidden; background: #fff; }
-        
-        /* СВЕТЛАЯ ПРЕМИАЛЬНАЯ ОБЛОЖКА */
-        .cover-page { 
-          text-align: center; 
-          display: flex; 
-          flex-direction: column; 
-          justify-content: space-between; 
-          height: 210mm; 
-          padding: 30mm 20mm; 
-          border: 10px double #d35400; /* Двойной благородный терракотовый кант */
-          box-sizing: border-box; 
-          background: #ffffff !important; 
-        }
-        .cover-logo { font-size: 42pt; font-weight: 900; color: #d35400; font-family: "Arial Black", sans-serif; letter-spacing: 2px; }
-        .cover-title { font-size: 32pt; font-weight: bold; margin-top: 15mm; color: #2c3e50; }
-        .cover-subtitle { font-size: 18pt; color: #e67e22; margin-top: 5mm; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .cover-footer { font-size: 13pt; font-weight: bold; border-top: 3px solid #d35400; padding-top: 6mm; color: #7f8c8d; text-transform: uppercase; letter-spacing: 2px; }
-        
-        /* СТИЛИЗАЦИЯ ЗАГОЛОВКОВ */
-        h1 { font-size: 20pt; color: #2c3e50; border-bottom: 4px solid #d35400; padding-bottom: 2mm; margin: 0 0 5mm 0; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
-        h2 { font-size: 18pt; color: #d35400; margin: 0; font-weight: 700; }
-        
-        .intro-box { display: flex; gap: 8mm; margin-top: 8mm; align-items: stretch; }
-        .intro-text-side { flex: 1.4; font-size: 13pt; line-height: 1.8; color: #34495e; text-align: justify; }
-        
-        /* ЭЛЕГАНТНАЯ ПЕСОЧНО-БЕЖЕВАЯ ПЛАШКА КОНТАКТОВ */
-        .intro-quote-side { 
-          flex: 1; 
-          background: #fdf2e9; 
-          border-left: 8px solid #d35400; 
-          padding: 6mm 8mm; 
-          border-radius: 0 8px 8px 0;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-        .quote-title { font-weight: bold; color: #d35400; font-size: 12pt; text-transform: uppercase; margin-bottom: 4mm; letter-spacing: 1px; border-bottom: 1px solid #e67e22; padding-bottom: 1mm; }
-        .quote-body { color: #2c3e50; font-size: 11pt; line-height: 1.8; }
-        .quote-body b { color: #d35400; }
-        
-        .spec-table { width: 100%; border-collapse: collapse; margin-top: 2mm; table-layout: fixed; }
-        .spec-table th { background-color: #34495e; color: #ffffff; padding: 2mm 3mm; text-align: left; text-transform: uppercase; font-size: 9.5pt; }
-        .spec-table td { border: 1px solid #bdc3c7; padding: 2mm 3mm; font-size: 10pt; word-wrap: break-word; }
-        .spec-table tr:nth-child(even) { background-color: #f8f9fa; }
-        
-        .row-header-panel { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bdc3c7; padding-bottom: 1mm; margin-bottom: 3mm; height: 12mm; box-sizing: border-box; }
-        
-        /* ПРИБОРНАЯ ПАНЕЛЬ СТОПРОЦЕНТНОГО КОНТРАСТА (ПЕСОЧНО-БЕЖЕВАЯ С КУСКАМИ ТЕРРАКОТА) */
-        .row-badge { 
-          background-color: #fdf2e9; /* Мягкий бежевый фон */
-          color: #4a3728; /* Кофейный легкочитаемый текст кирпичей */
-          padding: 1.5mm 3mm; 
-          font-size: 10pt; 
-          font-weight: bold; 
-          border-radius: 5px; 
-          max-width: 80%; 
-          text-align: right; 
-          line-height: 1.4; 
-          max-height: 11mm; 
-          overflow: hidden;
-          border: 1px solid #e67e22;
-        }
-        
-        /* ВНУТРЕННИЙ БЛОК ЛИТЬЯ — ТЕРРАКОТОВЫЙ КОНТРАСТ С БЕЛЫМИ БУКВАМИ */
-        .row-badge span {
-          background-color: #d35400 !important; 
-          color: #ffffff !important; 
-          padding: 0.5mm 2mm !important;
-          margin-left: 2mm !important;
-          border-radius: 3px !important;
-          font-weight: bold !important;
-          display: inline-block !important;
-        }
-        
-        .row-container { display: flex; gap: 5mm; width: 100%; }
-        .image-box { flex: 1; border: 1px solid #bdc3c7; padding: 2mm; text-align: center; border-radius: 4px; background: #fff; display: flex; flex-direction: column; height: 135mm; box-sizing: border-box; }
-        .image-title { font-size: 9pt; color: #7f8c8d; text-transform: uppercase; margin-bottom: 2mm; font-weight: 600; border-bottom: 1px solid #f2f2f2; padding-bottom: 1mm; }
-        
-        .img-wrapper { height: 120mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
-        .zoom-target { height: 145mm; } 
-        .zoom-target img { transform: scale(1.22); } 
-        
-        .notes-box { margin-top: 3mm; padding: 2mm 3mm; background: #fff9f2; border-left: 6px solid #ff9800; }
-        .notes-header { font-weight: bold; color: #d35400; font-size: 9pt; }
-        .notes-body { color: #34495e; font-size: 9.5pt; }
-        .header-meta { font-size: 8.5pt; color: #95a5a6; border-bottom: 1px solid #ecf0f1; padding-bottom: 1mm; margin-bottom: 3mm; text-transform: uppercase; display: flex; justify-content: space-between; }
-        .page-number { position: absolute; bottom: 4mm; right: 15mm; font-size: 11pt; font-weight: bold; color: #2c3e50; border-top: 2px solid #2c3e50; padding-top: 1mm; width: 15mm; text-align: center; }
-      '
+    # Структура данных снабжения для вывода в HTML
+    p_data = { metadata: { project_code: "NM-ZAKAZ-01" }, total_lf: 0, total_sp: 0, total_sh8: 0, total_finish_table: 0.0, mixtures: {}, iron_materials: {} }
+    bricks_per_row = Array.new(55) { { lf: 0, sp: 0, sh8: 0 } }
+    casting_per_row = Array.new(55) { "Нет" }
 
-      html = +"<!DOCTYPE html><html><head><meta charset='UTF-8'><style>#{styles}</style></head><body>"
-
-      # СТРАНИЦА 1: ОБЛОЖКА «СОЛНЕЧНЫЙ ТЕРРАКОТ»
-      html << "<div class='page cover-page'>" \
-                "<div class='cover-logo'>PECHNIK-NOVOSIB.RU</div>" \
-                "<div>" \
-                  "<div class='cover-title'>Барбекю комплекс #{p_data[:metadata][:project_code]}</div>" \
-                  "<div class='cover-subtitle'>Порядовое инженерное руководство</div>" \
-                "</div>" \
-                "<div class='cover-footer'>Новосибирск — #{p_data[:metadata][:date].split('.').last}</div>" \
-              "</div>"
-
-      # СТРАНИЦА 2: ВВЕДЕНИЕ
-      html << "<div class='page'>" \
-                "<div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]}</span><span>Введение</span></div>" \
-                "<h1>Состав технической документации</h1>" \
-                "<div class='intro-box'>" \
-                  "<div class='intro-text-side'>" \
-                    "Настоящее рабочее руководство содержит исчерпывающие архитектурные разрезы, спецификацию материалов фундаментного основания, полную карту заводских артикулов строительной керамики и порядовые схемы сборки отопительного комплекса.<br><br>" \
-                    "Каждый etapa прорисуван в двух ракурсах для исключения ошибок на объекте. Кладочные работы рекомендуется вести строго в соответствии с технологическими предписаниями, контролируя толщину швов и зазоры термокомпенсации." \
-                  "</div>" \
-                  "<div class='intro-quote-side'>" \
-                    "<div class='quote-title'>Контакты автора</div>" \
-                    "<div class='quote-body'>" \
-                      "• Телефон: <b>8 (913) 894-10-74</b><br>" \
-                      "<small style='color:#7f8c8d; padding-left:4mm;'>WhatsApp, звонки</small><br><br>" \
-                      "• Почта: <b>master-pechi@mail.ru</b><br><br>" \
-                      "• Сайт: <b>PECHNIK-NOVOSIB.RU</b>" \
-                    "</div>" \
-                  "</div>" \
-                "</div>" \
-                "<div class='page-number'>2</div>" \
-              "</div>"
-
-      # СТРАНИЦА 3: ОБЩИЙ ВИД
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 3</span><span>Общий вид изделия</span></div><h1>Общий вид барбекю комплекса</h1><div class='row-container'><div class='image-box' style='height:145mm;'><div class='img-wrapper' style='height:140mm;'><img src='../01_scenes/drawings/main_preview.png'></div></div></div><div class='page-number'>3</div></div>"
-      # ==============================================================================
-      # ЧАСТЬ 2.2 ИЗ 4: КАРТЫ С ЛОКАЛЬНЫМ ЗУМОМ, РАЗРЕЗЫ И СМЕТА ЧАСТЬ 1 (СТР. 4 - 8)
-      # ==============================================================================
-
-      # СТРАНИЦА 4: КАРТА МАТЕРИАЛОВ — СТРОИТЕЛЬНАЯ КЕРАМИКА (В СВЕТЛЫХ СТИЛЬНЫХ ОКНАХ)
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 4</span><span>Карта материалов</span></div><h1>Карта материалов — Строительная керамика</h1><div class='row-container'><div class='image-box'><div class='image-title'>Лицевой кирпич (LF)</div><div class='img-wrapper zoom-target'><img src='../01_scenes/drawings/palette_brick_facade.png'></div></div><div class='image-box'><div class='image-title'>Строительный кирпич (SP)</div><div class='img-wrapper zoom-target'><img src='../01_scenes/drawings/palette_brick_building.png'></div></div></div><div class='page-number'>4</div></div>"
-
-      # СТРАНИЦА 5: КАРТА МАТЕРИАЛОВ — ШАМОТ И ЛИТЬЕ (В СВЕТЛЫХ СТИЛЬНЫХ ОКНАХ)
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 5</span><span>Карта футеровки и узлов</span></div><h1>Карта материалов — Шамот и печное литье</h1><div class='row-container'><div class='image-box'><div class='image-title'>Шамотное ядро (ШБ-8 / SH8)</div><div class='img-wrapper zoom-target'><img src='../01_scenes/drawings/palette_firebrick.png'></div></div><div class='image-box'><div class='image-title'>Печное литье и фурнитура</div><div class='img-wrapper zoom-target'><img src='../01_scenes/drawings/palette_iron.png'></div></div></div><div class='page-number'>5</div></div>"
-
-      # СТРАНИЦА 6: ТЕХНИЧЕСКИЕ РАЗРЕЗЫ БОК О БОК (БЕЗ ДЕФОРМАЦИИ, ПОД КРУПНЫЙ ВЫГРУЖЕННЫЙ РАКУРС)
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 6</span><span>Конструктивные сечения</span></div><h1>Технические разрезы комплекса бок о бок</h1><div class='row-container'><div class='image-box'><div class='image-title'>Продольный разрез (Сечение 1)</div><div class='img-wrapper'><img src='../01_scenes/drawings/section_1.png'></div></div><div class='image-box'><div class='image-title'>Поперечный разрез (Сечение 2)</div><div class='img-wrapper'><img src='../01_scenes/drawings/section_2.png'></div></div></div><div class='page-number'>6</div></div>"
-
-      # СТРАНИЦА 7: ОБЩИЕ ПРАВИЛА КЛАДКИ
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 7</span><span>Инженерный регламент</span></div><h1>Общие правила проведения кладочных работ</h1><div style='font-size:11pt; line-height:1.6; margin-top:2mm;'><ul><li><b>Технологические швы наружного контура:</b> Для лицевого (LF) и забутовочного строительного (SP) кирпича толщина шва фиксируется строго 10 мм.</li><li><b>Швы огнеупорного ядра:</b> Для шамотной кладки (ШБ-8) горизонтальный шов составляет ровно 4 мм, вертикальный — 2 мм. Кладка ведется на термостойкий мертель.</li><li><b>Тепловой зазор футеровки:</b> Между шамотным ядром и наружными стенками из красного кирпича обязательно оставлять зазор 10–15 мм. Перевязка шамота с красным кирпичом строго запрещена! Зазор заполняется базальтовым картоном.</li><li><b>Монтаж печного литья:</b> Установка топочной, поддувальной и прочистных дверок выполняется с применением термостойкого уплотнительного шнура (кремнеземного или базальтового) для компенсации расширения металла.</li></ul></div><div class='page-number'>7</div></div>"
-
-      # Подготовка массива снабжения для деления по спецификациям
-      all_items = []
-      all_items << ["■ <b>Кирпич 1НФ Лицевой (LF артикул)</b>", "<b>#{p_data[:total_lf]} шт.</b>"]
-      all_items << ["■ <b>Кирпич 1НФ Строительный полнотелый (SP артикул)</b>", "<b>#{p_data[:total_sp]} шт.</b>"]
-      all_items << ["■ <b>Кирпич Шамотный огнеупорный (ШБ-8 / SH8)</b>", "<b>#{p_data[:total_sh8]} шт.</b>"]
-      
-      if p_data[:total_finish_table] > 0.0
-        all_items << ["■ <span style='color:#27ae60;'><b>Керамогранит столешницы (FINISH-TABLE)</b></span>", "<b>#{p_data[:total_finish_table]} м²</b>"]
+    # Чтение и разбор отчета
+    File.foreach(spec_path, encoding: 'utf-8') do |line|
+      line.strip!
+      if line =~ /^\[MODEL_TITLE\]\s*:\s*(.*)/
+        model_title = $1
+      elsif line =~ /row_(\d+)\s*\|\s*(LF-\d+-ST)\s*\|\s*.*\|\s*(\d+)/
+        row_idx = $1.to_i
+        bricks_per_row[row_idx][:lf] += $3.to_i
+      elsif line =~ /row_(\d+)\s*\|\s*(SH8-\d+-ST)\s*\|\s*.*\|\s*(\d+)/
+        row_idx = $1.to_i
+        bricks_per_row[row_idx][:sh8] += $3.to_i
+      elsif line =~ /row_(\d+)\s*\|\s*(SP-\d+-ST)\s*\|\s*.*\|\s*(\d+)/
+        row_idx = $1.to_i
+        bricks_per_row[row_idx][:sp] += $3.to_i
+      elsif line =~ /Ряд\s*(\d+)\s*\|.*\|\s*Литье:\s*(.*)/
+        row_idx = $1.to_i
+        casting_per_row[row_idx] = $2.strip unless $2.strip == "Нет"
+      elsif line =~ /LF \(Кирпич 1нф лицевой\)\s*:\s*(\d+)/
+        p_data[:total_lf] = $1.to_i
+      elsif line =~ /SP \(Кирпич 1нф строительный полнотелый\)\s*:\s*(\d+)/
+        p_data[:total_sp] = $1.to_i
+      elsif line =~ /SH8 \(Кирпич шамотный ШБ-8\)\s*:\s*(\d+)/
+        p_data[:total_sh8] = $1.to_i
+      elsif line =~ /FINISH-TABLE \(Керамогранит столешницы\)\s*:\s*([\d.]+)/
+        p_data[:total_finish_table] = $1.to_f
+      elsif line =~ /Глиняно-песчаная смесь.*:\s*(\d+)\s*кг/
+        p_data[:mixtures]["Глиняно-песчаная смесь (Красный швы 10мм)"] = "#{$1} кг"
+      elsif line =~ /Огнеупорный мертель.*:\s*(\d+)\s*кг/
+        p_data[:mixtures]["Огнеупорный мертель (Шамот швы 4/2мм)"] = "#{$1} кг"
+      elsif line =~ /^\s*([^|]+)\s*\|\s*(\d+)\s*$/ && !line.include?("PRODUCTION") && !line.include?("Номер")
+        p_data[:iron_materials][$1.strip] = $2.to_i
       end
-      
-      p_data[:iron_materials].each { |k, v| all_items << ["<span style='color:#d35400;'>■</span> #{k}", "<b>#{v} шт.</b>"] }
-      p_data[:mixtures].each { |k, v| all_items << ["<span style='color:#3498db;'>■</span> #{k}", "<b>#{v}</b>"] }
-
-      half_size = (all_items.size / 2.0).ceil
-      part1 = all_items.first(half_size)
-      part2 = all_items.last(all_items.size - half_size)
-
-      # СТРАНИЦА 8: СМЕТА ЧАСТЬ 1 (ПОЛНОСТРАНИЧНАЯ ТАБЛИЦА)
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 8</span><span>Сводная смета материалов (Часть 1)</span></div><h1>Сводная спецификация материалов конструкции</h1><div style='max-height:160mm;'><table class='spec-table'><thead><tr><th>Наименование материала / Инженерная позиция</th><th>Точное количество</th></tr></thead><tbody>"
-      part1.each { |name, qty| html << "<tr><td>#{name}</td><td>#{qty}</td></tr>" }
-      html << "</tbody></table></div><div class='page-number'>8</div></div>"
-      # ==============================================================================
-      # ЧАСТЬ 3 (А) ИЗ 4: СМЕТА ЧАСТЬ 2 И ПОЛНОСТРАНИЧНЫЙ ФУНДАМЕНТНЫЙ УЗЕЛ (СТР. 9 - 10)
-      # ==============================================================================
-
-      # СТРАНИЦА 9: СМЕТА ЧАСТЬ 2 (ПОЛНАЯ СТРАНИЦА В СВЕТЛОЙ СТИЛИСТИКЕ)
-      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 9</span><span>Сводная смета материалов (Часть 2)</span></div><h1>Сводная спецификация материалов конструкции (Часть 2)</h1><div style='max-height:160mm;'><table class='spec-table'><thead><tr><th>Наименование материала / Инженерная позиция</th><th>Точное количество</th></tr></thead><tbody>"
-      part2.each { |name, qty| html << "<tr><td>#{name}</td><td>#{qty}</td></tr>" }
-      html << "</tbody></table></div><div class='page-number'>9</div></div>"
-
-      # СТРАНИЦА 10: СПЕЦИФИКАЦИЯ ФУНДАМЕНТА (ВЫДЕЛЕННАЯ ПОЛНАЯ СТРАНИЦА «СОЛНЕЧНЫЙ ТЕРРАКОТ»)
-      html << "<div class='page'>" \
-                "<div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 10</span><span>Конструкция основания</span></div>" \
-                "<h1>Спецификация фундаментного основания комплекса</h1>" \
-                "<div class='row-container' style='gap:6mm; align-items: stretch; height: 155mm;'>" \
-                  "<div class='image-box' style='flex: 1.3; height: 100%;'>" \
-                    "<div class='image-title'>Угловой 3D-разрез фундаментной плиты</div>" \
-                    "<div class='img-wrapper' style='height: 140mm;'><img src='../01_scenes/drawings/foundation.png'></div>" \
-                  "</div>" \
-                  "<div style='flex: 1; display: flex; flex-direction: column; justify-content: flex-start; font-size: 11pt; line-height: 1.6; background: #fdfdfd; border: 1px solid #bdc3c7; border-radius: 4px; padding: 4mm 5mm; box-sizing: border-box;'>" \
-                    "<h3 style='margin: 0 0 3mm 0; color: #d35400; border-bottom: 2px solid #d35400; padding-bottom: 1mm; text-transform: uppercase; font-size: 12pt;'>Параметры монолитной плиты</h3>" \
-                    "<ul style='margin: 0; padding-left: 5mm;'>" \
-                      "<li><b>Тип конструкции:</b> Мелкозаглубленная монолитная железобетонная плита.</li>" \
-                      "<li><b>Марка бетона:</b> Прочностной класс не ниже Б22.5 (М300). Высокая влагостойкость.</li>" \
-                      "<li><b>Армирование:</b> Двухслойная пространственная сетка из арматуры класса А500С Ø 12 мм.</li>" \
-                      "<li><b>Шаг ячейки сетки:</b> Строго 200×200 мм или 250×250 мм согласно расчетным нагрузкам.</li>" \
-                      "<li><b>Подстилающие слои:</b> Подушка из речного песка с послойным трамбованием и уплотненный щебень фракции 20-40 мм.</li>" \
-                      "<li><b>Гидроизоляция:</b> Обязательный защитный барьер (два слоя гидроизола или рубероида) поверх бетонной подготовки.</li>" \
-                    "</ul>" \
-                  "</div>" \
-                "</div>" \
-                "<div class='page-number'>10</div>" \
-              "</div>"
-
-      # ГЕНЕРАЦИЯ ПОРЯДОВОК: Выравнивание под динамическую модель (Ряд 1 = Страница 11)
-      (1..54).each do |r|
-        rf = r.to_s.rjust(2, '0')
-        cp = r + 10 
-
-        info = p_data[:bricks_per_row][r]
-        pts = []
-        pts << "Лицевой LF: #{info[:lf]} шт." if info[:lf] > 0
-        pts << "Строительный SP: #{info[:sp]} шт." if info[:sp] > 0
-        pts << "Шамотный ШБ-8: #{info[:sh8]} шт." if info[:sh8] > 0
-
-        # Вывод монтажа литья в контрастном терракотовом боксе со светлыми буквами
-        if info[:iron]
-          pts << "<span>Монтаж: #{info[:iron]}</span>"
-        end
-
-        note = DEFAULT_NOTES[r] ? "<div class='notes-box'><div class='notes-header'>ЗАМЕТКА:</div><div class='notes-body'>#{DEFAULT_NOTES[r]}</div></div>" : ""
-        # Многострочная порядовая структура ряда с жесткой фиксацией высоты боксов (135mm)
-        html << "<div class='page'>" \
-                  "<div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Страница #{cp}</span><span>Порядовая сборка</span></div>" \
-                  "<div class='row-header-panel'>" \
-                    "<h2>Ряд №#{r}</h2>" \
-                    "<div class='row-badge'>#{pts.join(' | ')}</div>" \
-                  "</div>" \
-                  "<div class='row-container'>" \
-                    "<div class='image-box'>" \
-                      "<div class='image-title'>Вид сверху (План раскладки швов)</div>" \
-                      "<div class='img-wrapper'><img src='../01_scenes/top_view/row_#{rf}.png'></div>" \
-                    "</div>" \
-                    "<div class='image-box'>" \
-                      "<div class='image-title'>Изометрия (Объемное накопление)</div>" \
-                      "<div class='img-wrapper'><img src='../01_scenes/iso_view/row_#{rf}.png'></div>" \
-                    "</div>" \
-                  "</div>" \
-                  "#{note}" \
-                  "<div class='page-number'>#{cp}</div>" \
-                "</div>"
-      end
-
-      html << "</body></html>"
-
-      # Запись альбома в новой светлой скандинавской концепции «Солнечный терракот»
-      output_dir = "D:/pechnik-engineering-hub/03_web_guide"
-      FileUtils.mkdir_p(output_dir)
-      File.write("#{output_dir}/index.html", html)
-
-      puts "[УСПЕХ] Финальный светлый альбом v77.63 успешно собран!" \
-           " Концепция «Солнечный терракот» внедрена, контраст и читаемость литья на 100%."
     end
+    # ОПРЕДЕЛЕНИЕ СТИЛЕЙ СЕТКИ АЛЬБОМА v77.78
+    styles = <<~CSS
+      @page { size: A4 landscape; margin: 0; }
+      body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #7f8c8d; -webkit-print-color-adjust: exact; }
+      .page { width: 297mm; height: 210mm; page-break-after: always; position: relative; background: #ffffff; box-sizing: border-box; padding: 12mm 15mm; overflow: hidden; }
+      .header-meta { display: flex; justify-content: space-between; font-size: 8pt; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid #f3f3f3; padding-bottom: 2mm; margin-bottom: 4mm; font-weight: bold; }
+      h1 { font-size: 19pt; color: #2c3e50; margin: 0 0 4mm 0; text-transform: uppercase; font-weight: 800; letter-spacing: -0.5px; }
+      
+      /* 1. СЕТКА ДЛЯ ПОРЯДОВОК (Ряды 1-54) */
+      .row-container { display: flex; gap: 5mm; width: 100%; height: 135mm; box-sizing: border-box; margin-top: 2mm; }
+      .row-container .image-box { flex: 1; border: 1px solid #bdc3c7; padding: 3mm; text-align: center; border-radius: 6px; background: #ffffff; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; }
+      .row-container .img-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      
+      /* 2. СЕТКА ДЛЯ ФУНДАМЕНТА (Стр. 10) */
+      .foundation-container { display: flex; gap: 6mm; align-items: stretch; width: 100%; height: 122mm; box-sizing: border-box; }
+      .foundation-container .image-box { flex: 1.3; border: 1px solid #bdc3c7; padding: 3mm; background: #ffffff; border-radius: 6px; height: 100%; }
+      .foundation-container .img-wrapper { height: 110mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      
+      /* 3. КОМПАКТНЫЙ МАСШТАБ ДЛЯ ДВОЙНЫХ КАРТ И РАЗРЕЗОВ (Стр. 4, 5, 6) */
+      .materials-container { display: flex; flex-direction: column; gap: 4mm; width: 100%; }
+      .materials-container .img-wrapper { height: 62mm !important; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; }
+      .img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      .image-title { font-size: 9.5pt; color: #7f8c8d; text-transform: uppercase; margin-bottom: 2mm; font-weight: bold; }
+
+      /* ИНФОРМАЦИОННАЯ ПЛАНКА БЕЗ СЪЕЗЖАНИЯ */
+      .row-badge { display: flex; flex-direction: column; gap: 1.5mm; background-color: #fdf2e9; color: #4a3728; padding: 2mm 4mm; font-size: 10pt; font-weight: bold; border-radius: 6px; border: 1px solid #e67e22; max-width: 85%; box-sizing: border-box; }
+      .row-badge span { display: block !important; background-color: #d35400 !important; color: #ffffff !important; padding: 1.5mm 3mm !important; margin: 1mm 0 0 0 !important; border-radius: 4px !important; font-size: 9.5pt !important; font-weight: 500; line-height: 1.3; word-wrap: break-word !important; white-space: normal !important; }
+      
+      /* Таблицы спецификаций */
+      table.spec-table { width: 100%; border-collapse: collapse; margin-top: 2mm; font-size: 10pt; }
+      table.spec-table th { background-color: #2c3e50; color: white; padding: 3mm; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 9pt; }
+      table.spec-table td { padding: 2.5mm 3mm; border-bottom: 1px solid #e2e8f0; color: #334155; }
+      table.spec-table tr:nth-child(even) { background-color: #f8fafc; }
+      
+      .notes-box { margin-top: 3mm; padding: 3mm; background: #fff9f2; border-left: 5px solid #ff9800; border-radius: 4px; }
+      .notes-header { font-weight: bold; color: #d35400; font-size: 9.5pt; margin-bottom: 1mm; }
+      .notes-body { color: #5a4a3a; font-size: 9pt; line-height: 1.4; }
+      .page-number { position: absolute; bottom: 4mm; right: 15mm; font-size: 11pt; font-weight: bold; color: #2c3e50; }
+      
+      /* Обложка и введение */
+      .page-cover { background: linear-gradient(135deg, #d35400 0%, #e67e22 100%); padding: 30mm 25mm; color: white; }
+      .cover-logo { font-size: 14pt; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; border-bottom: 3px solid white; padding-bottom: 3mm; display: inline-block; }
+      .cover-title { font-size: 32pt; font-weight: 900; margin: 25mm 0 2mm 0; line-height: 1.1; }
+      .cover-subtitle { font-size: 16pt; font-weight: 300; opacity: 0.9; }
+      .cover-footer { position: absolute; bottom: 15mm; left: 25mm; font-size: 10pt; opacity: 0.8; font-weight: bold; }
+      .intro-box { display: flex; gap: 8mm; margin-top: 4mm; }
+      .intro-text-side { flex: 1.6; font-size: 10.5pt; line-height: 1.6; color: #34495e; text-align: justify; }
+      .intro-quote-side { flex: 1; background: #fff2e6; border-left: 4px solid #e67e22; padding: 5mm; border-radius: 4px; height: fit-content; }
+      @media print { body { background: none; } .page { box-shadow: none; margin: 0; } }
+    CSS
+
+    html = +"<!DOCTYPE html><html><head><meta charset='UTF-8'><style>#{styles}</style></head><body>"
+    # Стр. 1: Обложка
+    html << "<div class='page page-cover'><div class='cover-logo'>PECHNIK-NOVOSIB.RU</div>" \
+            "<div class='cover-title'>Барбекю комплекс «#{model_title}»</div>" \
+            "<div class='cover-subtitle'>Порядовое инженерное руководство повышенной точности</div>" \
+            "<div class='cover-footer'>Новосибирск — #{Time.now.strftime('%d.%m.%Y')}</div></div>"
+
+    # Стр. 2: Введение журнального типа
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]}</span><span>Введение</span></div>" \
+            "<h1>Состав технической документации</h1><div class='intro-box'><div class='intro-text-side'>" \
+            "<p>Настоящее рабочее руководство содержит исчерпывающие архитектурные разрезы, спецификацию материалов фундаментного основания, полную карту снабжения артикулов строительной керамики и порядовые схемы сборки отопительного комплекса.</p>" \
+            "<p>Каждый этап прорисован в двух ракурсах для исключения ошибок на объекте. Кладочные работы рекомендуется вести строго в соответствии с технологическими предписаниями, контролируя толщину швов и зазоры термокомпенсации.</p></div>" \
+            "<div class='intro-quote-side'><b>Контакты автора:</b><br><br>Телефон: <b>+7 (913) 894-10-74</b><br><small>WhatsApp, звонки</small><br><br>Почта: <b>master-pechnik@mail.ru</b><br>Сайт: <b>pechnik-novosib.ru</b></div></div>" \
+            "<div class='page-number'>2</div></div>"
+
+    # Стр. 3: Общий вид комплекса
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 3</span><span>Общий вид изделия</span></div>" \
+            "<h1>Общий вид готового комплекса</h1><div class='img-wrapper' style='height:145mm; border:1px solid #bdc3c7; border-radius:6px; background:#fff;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/main_preview.png'></div>" \
+            "<div class='page-number'>3</div></div>"
+
+    # Стр. 4: Карта материалов — Керамика
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 4</span><span>Карта материалов</span></div>" \
+            "<h1>Карта материалов — Облицовка и строительный кирпич</h1><div class='materials-container'>" \
+            "  <div class='image-title'>Лицевой фасадный кирпич (LF)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_facade.png'></div>" \
+            "  <div class='image-title'>Строительный кирпич наполнения (SP)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_brick_building.png'></div>" \
+            "</div><div class='page-number'>4</div></div>"
+
+    # Стр. 5: Карта материалов — Шамот и литье
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 5</span><span>Карта материалов</span></div>" \
+            "<h1>Карта материалов — Шамот и печная фурнитура</h1><div class='materials-container'>" \
+            "  <div class='image-title'>Шамотное ядро топки (ШБ-8 / SH8)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_firebrick.png'></div>" \
+            "  <div class='image-title'>Печное чугунное литье и узлы монтажа</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/palette_iron.png'></div>" \
+            "</div><div class='page-number'>5</div></div>"
+
+    # Стр. 6: Технические разрезы бок о бок
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 6</span><span>Конструктивные сечения</span></div>" \
+            "<h1>Технические разрезы комплекса бок о бок</h1><div class='materials-container'>" \
+            "  <div class='image-title'>Продольный разрез (Сечение 1)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_1.png'></div>" \
+            "  <div class='image-title'>Поперечный разрез (Сечение 2)</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/section_2.png'></div>" \
+            "</div><div class='page-number'>6</div></div>"
+
+    # Стр. 7: Инженерный регламент
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 7</span><span>Регламент кладки</span></div>" \
+            "<h1>Общие правила проведения кладочных работ</h1><div style='font-size:11pt; line-height:1.5; margin-top:2mm; color:#2c3e50;'>" \
+            "<ul><li><b>Толщина швов:</b> Для красного кирпича (лицевой и строительный) строго 10 мм. Для шамотного ядра: горизонтальные — 4 мм, вертикальные — 2 мм.</li>" \
+            "<li><b>Перевязка:</b> Минимальная перевязка вертикальных швов в смежных рядах должна составлять не менее 1/4 длины кирпича.</li>" \
+            "<li><b>Термокомпенсация:</b> Между шамотным ядром и наружными стенками из красного кирпича принудительно закладывается базальтовый картон толщиной 5-10 мм. Связывать их между собой раствором запрещено!</li>" \
+            "<li><b>Качество шва:</b> Все швы в зоне дымовых каналов и топливника должны быть полностью заполнены раствором. Излишки раствора внутри каналов подлежат обязательной швабровке.</li></ul></div>" \
+            "<div class='page-number'>7</div></div>"
+    # Подготовка и динамическое распределение данных сметы по двум листам
+    all_items = [
+      "■ Кирпич 1НФ Лицевой (LF артикул): <b>#{p_data[:total_lf]} шт.</b>",
+      "■ Кирпич 1НФ Строительный полнотелый (SP артикул): <b>#{p_data[:total_sp]} шт.</b>",
+      "■ Кирпич Шамотный огнеупорный (ШБ-8 / SH8): <b>#{p_data[:total_sh8]} шт.</b>"
+    ]
+    all_items << "■ Керамогранит столешницы (FINISH-TABLE): <b>#{p_data[:total_finish_table].round(2)} м²</b>" if p_data[:total_finish_table] > 0
+    p_data[:iron_materials].each { |k, v| all_items << "■ #{k}: <b>#{v} шт.</b>" }
+    p_data[:mixtures].each { |k, v| all_items << "■ #{k}: <b>#{v}</b>" }
+
+    half_size = (all_items.size / 2.0).ceil
+    part1 = all_items.first(half_size)
+    part2 = all_items.last(all_items.size - half_size)
+
+    # Стр. 8: Сводная спецификация материалов (Часть 1)
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 8</span><span>Сводная спецификация материалов</span></div>" \
+            "<h1>Сводная спецификация материалов конструкции (Часть 1)</h1><table class='spec-table'><thead><tr><th>Наименование материала / Элемента снабжения</th><th>Расчетное количество</th></tr></thead><tbody>"
+    part1.each { |item| name, qty = item.split(':'); html << "<tr><td>#{name}</td><td>#{qty}</td></tr>" }
+    html << "</tbody></table><div class='page-number'>8</div></div>"
+
+    # Стр. 9: Сводная спецификация материалов (Часть 2)
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 9</span><span>Сводная спецификация материалов</span></div>" \
+            "<h1>Сводная спецификация материалов конструкции (Часть 2)</h1><table class='spec-table'><thead><tr><th>Наименование печной фурнитуры и смесей</th><th>Расчетное количество</th></tr></thead><tbody>"
+    part2.each { |item| name, qty = item.split(':'); html << "<tr><td>#{name}</td><td>#{qty}</td></tr>" }
+    html << "</tbody></table><div class='page-number'>9</div></div>"
+
+    # Стр. 10: Спецификация фундаментного основания
+    html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Стр. 10</span><span>Конструкция основания</span></div>" \
+            "<h1>Спецификация фундаментного основания комплекса</h1><div class='foundation-container'>" \
+            "  <div class='image-box'><div class='image-title'>Угловой 3D-разрез фундаментной плиты</div><div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/foundation.png'></div></div>" \
+            "  <div style='flex:1; display:flex; flex-direction:column; justify-content:flex-start; font-size:10pt;'>" \
+            "    <h3 style='margin:0 0 2mm 0; color:#d35400; border-bottom:2px solid #d35400; padding-bottom:1mm;'>Технические параметры плиты:</h3>" \
+            "    <ul style='margin:0; padding-left:5mm; line-height:1.4;'>" \
+            "      <li><b>Тип конструкции:</b> Мелкозаглубленная монолитная железобетонная плита</li>" \
+            "      <li><b>Марка бетона:</b> Прочностной класс не ниже B22.5 (М300) с высокой влагостойкостью</li>" \
+            "      <li><b>Армирование:</b> Двухслойная пространственная сетка из арматуры класса А500С Ø 12 мм</li>" \
+            "      <li><b>Шаг ячейки сетки:</b> Строго 200х200 мм согласно расчетным нагрузкам конструкции</li>" \
+            "      <li><b>Подстилающие слои:</b> Подушка из речного песка с послойным трамбованием и уплотненный щебень</li>" \
+            "      <li><b>Гидроизоляция:</b> Обязательный защитный барьер (два слоя гидроизола или рубероида)</li>" \
+            "    </ul></div></div><div class='page-number'>10</div></div>"
+    # Стр. 11 - 64: Порядовая кладка 1-54 (Ряд №1 стартует строго со Страницы 11)
+    puts "Синтез порядовой разметки в HTML..."
+    (1..54).each do |r|
+      rf = r.to_s.rjust(2, '0')
+      cp = r + 10
+      info = bricks_per_row[r]
+      
+      pts = []
+      pts << "Лицевой LF: #{info[:lf]} шт." if info[:lf] > 0
+      pts << "Строительный SP: #{info[:sp]} шт." if info[:sp] > 0
+      pts << "Шамотный ШБ-8: #{info[:sh8]} шт." if info[:sh8] > 0
+      brick_text = pts.join(" | ")
+
+      html << "<div class='page'><div class='header-meta'><span>Проект #{p_data[:metadata][:project_code]} — Страница #{cp}</span><span>Порядовая сборка</span></div>" \
+              "<h1>Ряд №#{r}</h1><div class='row-badge'>#{brick_text}"
+      
+      if casting_per_row[r] != "Нет"
+        html << "<span>Монтаж: #{casting_per_row[r]}</span>"
+      end
+      html << "</div>"
+
+      # Блок чертежей ряда через жесткую сетку row-container
+      html << "  <div class='row-container'>" \
+              "    <div class='image-box'>" \
+              "      <div class='image-title'>Вид сверху (План раскладки швов)</div>" \
+              "      <div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/top_view/row_#{rf}.png'></div>" \
+              "    </div>" \
+              "    <div class='image-box'>" \
+              "      <div class='image-title'>Изометрия (Объемное накопление)</div>" \
+              "      <div class='img-wrapper zoom-target'><img src='D:/pechnik-engineering-hub/01_scenes/iso_view/row_#{rf}.png'></div>" \
+              "    </div>" \
+              "  </div>" \
+              "  <div class='page-number'>#{cp}</div>" \
+              "</div>" # ЖЕЛЕЗОБЕТОННЫЙ ФИКС: Закрываем основной тег страницы (.page)!
+    end
+
+    html << "</body></html>"
+    
+    # Физическая запись на диск D
+    File.open(output_html_path, "w:UTF-8") { |f| f.write(html) }
+    puts "[+] Альбом успешно сгенерирован: #{output_html_path}"
+    
+    UI.messagebox("АЛЬБОМ НА СЛУЖБЕ v77.78 СОБРАН ИДЕАЛЬНО!\n\n" \
+                 "Всего страниц: 64 листов А4.\n" \
+                 "Все теги закрыты. Пути зафиксированы.")
   end
 end
-
-# Автоматический запуск генерации при вызове скрипта
-PechnikEngineeringHub::HtmlGenerator.generate
+# ==============================================================================
+# КОНЕЦ СКРИПТА generate_html_guide.rb — СБОРКА АЛЬБОМА v77.78 ЗАВЕРШЕНА
+# ==============================================================================
