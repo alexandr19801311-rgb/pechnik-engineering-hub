@@ -27,7 +27,7 @@ module PechnikEngineeringHub
     folders.each { |folder| FileUtils.mkdir_p(folder) unless Dir.exist?(folder) }
   end
 
-  # 2. ПАКЕТНЫЙ ЭКСПОРТЕР PNG С НАДЁЖНОЙ НАТИВНОЙ КАМЕРОЙ
+  # 2. ПАКЕТНЫЙ ЭКСПОРТЕР PNG — МОНОЛИТНЫЙ СТАБИЛЬНЫЙ БЛОК (v77.78 - ЖИВАЯ КАМЕРА)
   def self.export_scenes_to_png(mode = :iso)
     ensure_project_folders
     model = Sketchup.active_model
@@ -42,31 +42,24 @@ module PechnikEngineeringHub
       sub_folder = "top_view"
       view.camera.perspective = false
       
-      # Сначала центрируем по ВСЕЙ модели, чтобы зафиксировать единый масштаб
-      view.zoom_extents
-      view.zoom(1.15) 
-      
-      # Только ПОСЛЕ этого гасим лишние слои отделки
+      # РЕЖИМ "ЖИВАЯ КАМЕРА": Временно прячем палитры и отделку.
+      # Масштаб и центрирование скрипт вообще не трогает — берет то, что сейчас у тебя на экране!
       layers.each do |layer|
         l_name = layer.name.downcase
         layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
       end
       
-      # Намертво фиксируем этот ракурс по координатам центра
-      center_point = model.bounds.center
-      eye_point = Geom::Point3d.new(center_point.x, center_point.y, model.bounds.max.z + 10000)
-      view.camera.set(eye_point, center_point, Geom::Vector3d.new(0, 1, 0))
-      
       view.refresh
-      sleep(0.4)
+      sleep(0.40) # Пауза Х2 на стабилизацию графического конвейера
     else
-
       sub_folder = "iso_view"
       puts "[+] Ракурс ISO зафиксирован с экрана один в один."
     end
 
+    # Намертво замораживаем текущий настроенный инженером ракурс перед циклом
     fixed_camera_focused = view.camera
     output_dir = File.join("D:/pechnik-engineering-hub/01_scenes", sub_folder)
+
     options = {
       width: 2480,
       height: 1754,
@@ -84,18 +77,19 @@ module PechnikEngineeringHub
           
           if layer_name =~ /row_(\d+)|ряд_(\d+)/
             row_num = ($1 || $2).to_i
-            # Для вида сверху — строго один текущий ряд. Для изометрии — накопление.
+            # Для вида сверху — строго один текущий ряд. Для изометрии — накопительное возведение.
             layer.visible = (mode == :top ? row_num == current_row : row_num <= current_row)
           elsif layer_name.start_with?("finish_")
-            layer.visible = false # Столешницы скрыты на порядовках
+            layer.visible = false # Столешницы всегда скрыты на порядовках
           elsif layer_name.start_with?("palette_") || layer_name == "untagged"
             layer.visible = true # Палитры всегда отображаются
           end
         end
 
-        # Восстанавливаем ракурс и принудительно держим центр на каждом ряду
-        view.camera = fixed_camera_focused       
-        view.invalidate # Стираем старый кэш видеокарты (фикс черноты)
+        # Восстанавливаем ракурс и принудительно держим твой ручной масштаб на каждом ряду
+        view.camera = fixed_camera_focused
+        
+        view.invalidate # Стираем старый кэш видеокарты (железобетонный фикс черноты)
         view.refresh    # Перерисовываем геометрию ряда с нуля
         
         # КРИТИЧЕСКАЯ УДВОЕННАЯ ЗАДЕРЖКА ПАУЗА Х2 (ДЛЯ НАВЕРОЧКИ)
@@ -114,6 +108,7 @@ module PechnikEngineeringHub
       puts "[+] Рабочая область инженера успешно восстановлена."
     end
   end # def self.export_scenes_to_png
+
   # ==============================================================================
   # 3. СКВОЗНОЙ РЕКУРСИВНЫЙ СКАНЕР МОДЕЛИ И РАСЧЕТ СТОЛЕШНИЦ (ЧАСТЬ 3)
   # ==============================================================================
