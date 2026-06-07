@@ -278,24 +278,40 @@ module PechnikEngineeringHub
               "<h1>Ряд №#{r}</h1><div class='row-badge'>#{brick_text}"
       
       if casting_per_row[r] != "Нет"
-        html << "<span>Монтаж: #{casting_per_row[r]}</span>"
+        # Собираем все элементы из строки в массив
+        items = casting_per_row[r].split(',').map(&:strip)
+        counts = Hash.new(0)
+        
+        items.each do |item|
+          # Вытаскиваем чистое название без хвоста "(1 шт)"
+          clean_item_name = item.gsub(/\s*\(\d+\s*шт\)/, '').strip
+          counts[clean_item_name] += 1
+        end
+        
+        # Формируем красивую суммированную строку
+        summary_pts = counts.map { |name, count| "#{name} (#{count} шт)" }
+        html << "<span>Монтаж: #{summary_pts.join(', ')}</span>"
       end
+
       html << "</div>"
 
-      # Блок чертежей ряда через жесткую сетку row-container
-      html << "  <div class='row-container'>" \
-              "    <div class='image-box'>" \
-              "      <div class='image-title'>Вид сверху (План раскладки швов)</div>" \
-              "      <div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/top_view/row_#{rf}.png'></div>" \
-              "    </div>" \
-              "    <div class='image-box'>" \
-              "      <div class='image-title'>Изометрия (Объемное накопление)</div>" \
-              "      <div class='img-wrapper zoom-target'><img src='D:/pechnik-engineering-hub/01_scenes/iso_view/row_#{rf}.png'></div>" \
-              "    </div>" \
-              "  </div>" \
-              "  <div class='page-number'>#{cp}</div>" \
-              "</div>" # ЖЕЛЕЗОБЕТОННЫЙ ФИКС: Закрываем основной тег страницы (.page)!
-    end
+        html << "  <div class='row-container'>" \
+                "    <div class='image-box'>" \
+                "      <div class='image-title'>Вид сверху (План раскладки швов)</div>" \
+                "      <div class='img-wrapper'><img src='D:/pechnik-engineering-hub/01_scenes/top_view/row_#{rf}.png'></div>" \
+                "    </div>" \
+                "    <div class='image-box'>" \
+                "      <div class='image-title'>Изометрия (Объемное накопление)</div>" \
+                "      <div class='img-wrapper zoom-target'><img src='D:/pechnik-engineering-hub/01_scenes/iso_view/row_#{rf}.png'></div>" \
+                "    </div>" \
+                "  </div>" \
+                "  <div style='display: flex; align-items: center; width: 100%; height: 12mm; background: #fffdf9; border: 1px solid #e9d5c5; border-radius: 6px; margin-top: 3mm; padding: 0 4mm; box-sizing: border-box; font-size: 8.5pt; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);'>" \
+                "    <b style='color: #ffffff; background-color: #d35400; padding: 1mm 2.5mm; border-radius: 4px; margin-right: 4mm; text-transform: uppercase; letter-spacing: 0.7px; font-size: 7.5pt; font-weight: bold;'>Заметки</b>" \
+                "    <div style='flex: 1; height: 100%; background-image: linear-gradient(to bottom, transparent 95%, #eedcd0 95%); background-size: 100% 6mm; margin-top: 2mm; opacity: 0.8;'></div>" \
+                "  </div>" \
+                "  <div class='page-number'>#{cp}</div>" \
+                "</div>"
+				end
 
     html << "</body></html>"
     
