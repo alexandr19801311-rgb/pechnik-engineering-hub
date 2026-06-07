@@ -1,20 +1,18 @@
 # frozen_string_literal: true
 # Encoding: UTF-8
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v77.78 — АВТОМАТИЗАЦИЯ И СМЕТНЫЙ СИНТЕЗ
-# МОДУЛЬНАЯ СБОРКА: ЧАСТЬ 1.1 (ИНИЦИАЛИЗАЦИЯ И СИНХРОНИЗАЦИЯ ПАПОК)
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v77.78 — СТАБИЛИЗИРОВАННЫЙ ЭКСПОРТЕР (ДВИЖОК OVERDRIVE)
 # ==============================================================================
 
 require 'fileutils'
 require 'sketchup'
 
 module PechnikEngineeringHub
-  # Константы веса кирпича (кг/уел. шт)
   WEIGHT_LF  = 3.7
   WEIGHT_SP  = 3.5
   WEIGHT_SH8 = 3.4
 
-  # Автоматическое создание структуры директорий на диске D
+  # 1. СИНХРОНИЗАЦИЯ ДИРЕКТОРИЙ НА ДИСКЕ D
   def self.ensure_project_folders
     base_path = "D:/pechnik-engineering-hub"
     folders = [
@@ -27,7 +25,8 @@ module PechnikEngineeringHub
     ]
     folders.each { |folder| FileUtils.mkdir_p(folder) unless Dir.exist?(folder) }
   end
-  # Основной метод экспорта с защитой слоев от загрязнения рабочей среды
+
+  # 2. ПАКЕТНЫЙ ЭКСПОРТЕР PNG С ИЗОЛИРОВАННОЙ ЛОГИКОЙ РЯДОВ
   def self.export_scenes_to_png(mode = :iso)
     ensure_project_folders
     model = Sketchup.active_model
@@ -38,24 +37,33 @@ module PechnikEngineeringHub
     original_visibility = {}
     layers.each { |layer| original_visibility[layer] = layer.visible? }
 
-    # Нативная конфигурация ракурсов под графический движок Overdrive в SketchUp 2025
+    # ЖЕСТКАЯ СИНХРОНИЗАЦИЯ ГРАФИЧЕСКОГО КОНВЕЙЕРА (v77.78)
     if mode == :top
       sub_folder = "top_view"
       view.camera.perspective = false
-      Sketchup.send_action("viewTop:")
+      
+      # Временно гасим лишние слои для точного центрирования по габаритам барбекю
+      layers.each do |layer|
+        l_name = layer.name.downcase
+        layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
+      end
+      
+      # Математический принудительный разворот камеры строго над объектом сверху вниз
+      eye_top = Geom::Point3d.new(model.bounds.center.x, model.bounds.center.y, model.bounds.max.z + 5000)
+      target_top = model.bounds.center
+      up_top = Geom::Vector3d.new(0, 1, 0)
+      view.camera.set(eye_top, target_top, up_top)
+      view.zoom_extents
+      view.zoom(1.12)
     else
       sub_folder = "iso_view"
-      view.camera.perspective = true
-      Sketchup.send_action("viewIso:")
+      # ФИЧА "ЖИВАЯ КАМЕРА": Замораживаем текущий красивый ракурс экрана инженера без сбросов
+      puts "[+] Ракурс ISO зафиксирован с экрана один в один."
     end
     
-    sleep(0.1) # Гарантированная пауза для разворота камеры движком
-    view.zoom_extents
-    fixed_camera = view.camera
-
+    fixed_camera_focused = view.camera
     output_dir = File.join("D:/pechnik-engineering-hub/01_scenes", sub_folder)
     
-    # Настройки рендера упакованы строго в хэш-структуру во избежание ArgumentError
     options = {
       width: 2480,
       height: 1754,
@@ -64,65 +72,51 @@ module PechnikEngineeringHub
       compression: 9,
       show_summary: false
     }
+    
     model.start_operation("Экспорт порядовок", true)
     begin
-      # ФИКС КАМЕРЫ v77.78: Временно гасим палитры для точного зума порядовок
-      layers.each do |layer|
-        l_name = layer.name.downcase
-        layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
-      end
-      
-      # ФИЧА "ЖИВАЯ КАМЕРА" v77.78: Полная заморозка ракурса экрана инженера
-      if mode == :top
-        view.camera.perspective = false
-        Sketchup.send_action("viewTop:")
-        view.zoom_extents
-        view.zoom(1.12)
-      else
-        # Железобетонно фиксируем текущую камеру инженера без сбросов
-        puts "[+] Ракурс ISO успешно зафиксирован с экрана на верочку."
-      end
-      
-      fixed_camera_focused = view.camera
-      
-      # ЖЕЛЕЗОБЕТОННАЯ ПАУЗА: Даем ядру Overdrive полностью перестроиться перед первым кадром
       view.refresh
-      sleep(0.6)
-      
+      sleep(0.4)
+
       (1..54).each do |current_row|
         layers.each do |layer|
           layer_name = layer.name.downcase
           
           if layer_name =~ /row_(\d+)|ряд_(\d+)/
             row_num = ($1 || $2).to_i
+            # ИСПРАВЛЕНО: Для вида сверху — строго ОДИН ТЕКУЩИЙ ряд (предыдущие скрываем!)
+            # Для изометрии — классическое накопление рядов снизу вверх
             layer.visible = (mode == :top ? row_num == current_row : row_num <= current_row)
           elsif layer_name.start_with?("finish_")
-            layer.visible = false
+            layer.visible = false # Столешницы всегда скрыты на порядовках
           elsif layer_name.start_with?("palette_") || layer_name == "untagged"
-            layer.visible = true
+            layer.visible = true # Палитры всегда отображаются на кадре рендера
           end
         end
 
-        # Применяем зафиксированную живую камеру инженера без зуммирования
+        # Применяем зафиксированную камеру
         view.camera = fixed_camera_focused
         view.refresh
-        sleep(0.08)
+        
+        # ЖЕЛЕЗОБЕТОННАЯ ЗАДЕРЖКА: защита от пропуска кадров и черноты
+        sleep(0.15)
 
-
-        # Добавляем имя файла в хэш настроек и рендерим
         options[:filename] = File.join(output_dir, "row_#{sprintf('%02d', current_row)}.png")
         view.write_image(options)
-        puts "[#{sprintf('%02d', current_row)}/54] Кадр успешно экспортирован"
+        puts "[#{sprintf('%02d', current_row)}/54] Кадр порядовки успешно экспортирован"
       end
     ensure
-      # Гарантированное восстановление слоев инженера в исходное состояние
+      # Гарантированное возвращение слоев рабочей зоны инженера в исходное состояние
       original_visibility.each { |layer, vis| layer.visible = vis }
       model.commit_operation
       view.refresh
       puts "[+] Рабочая область инженера успешно восстановлена."
     end
   end
-  # Основной метод сметного калькулятора и анализа геометрии модели
+
+  # ==============================================================================
+  # 3. СКВОЗНОЙ РЕКУРСИВНЫЙ СКАНЕР МОДЕЛИ И РАСЧЕТ СТОЛЕШНИЦ
+  # ==============================================================================
   def self.export_materials_specification
     ensure_project_folders
     model = Sketchup.active_model
@@ -132,43 +126,40 @@ module PechnikEngineeringHub
     hardware_data = Hash.new(0)
     total_finish_table_area = 0.0
     
-    # Инициализация пустой матрицы порядового расхода на 54 ряда
     row_matrix = Array.new(54) { { "LF" => 0.0, "SP" => 0.0, "SH8" => 0.0, "casting" => "Нет" } }
 
-    # Всеядный рекурсивный сканер слоев и вложенных компонентов
     scan_spec = ->(instance, current_row = "Вне рядов", transform = Geom::Transformation.new) do
       layer_name = instance.layer.name.downcase.strip
       
-      # Определение принадлежности к ряду (поддержка кириллицы и регистра)
       if layer_name =~ /row_(\d+)|ряд_(\d+)/
         current_row = sprintf("row_%02d", ($1 || $2).to_i)
       elsif layer_name =~ /^\d+$/
         current_row = sprintf("row_%02d", layer_name.to_i)
       end
 
-      # Расчет глобальной трансформации с учетом масштабирования
       combined_transform = transform * (instance.respond_to?(:transformation) ? instance.transformation : Geom::Transformation.new)
 
-      if instance.respond_to?(:definition)
-        clean_name = instance.definition.name.gsub(/#\d+/, '').strip
-        clean_name_down = clean_name.downcase
-        # 1. ГЕОМЕТРИЧЕСКИЙ РАСЧЕТ СТОЛЕШНИЦ (FINISH-TABLE)
-        if clean_name_down.include?('finish_table') || clean_name_down.include?('столешниц') || clean_name_down.include?('керамогранит')
-          instance.definition.entities.each do |e|
-            if e.is_a?(Sketchup::Face)
-              global_normal = e.normal.transform(combined_transform)
-              if global_normal.z > 0.99
-                mat_arr = combined_transform.to_a
-                p_sx = Math.sqrt(mat_arr[0]**2 + mat_arr[1]**2 + mat_arr[2]**2)
-                p_sy = Math.sqrt(mat_arr[4]**2 + mat_arr[5]**2 + mat_arr[6]**2)
-                # Конвертация площади из дюймов² в м²
-                total_finish_table_area += (e.area * p_sx * p_sy) * 0.00064516
-              end
+      # 1. ГЕОМЕТРИЧЕСКИЙ РАСЧЕТ СТОЛЕШНИЦ ПО МЕТКЕ СЛОЯ (ФИКС v77.78)
+      if layer_name.include?('finish_table')
+        ents = instance.respond_to?(:definition) ? instance.definition.entities : (instance.respond_to?(:entities) ? instance.entities : [])
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            global_normal = e.normal.transform(combined_transform)
+            if global_normal.z > 0.98
+              mat_arr = combined_transform.to_a
+              scale_x = Math.sqrt(mat_arr[0]**2 + mat_arr[1]**2 + mat_arr[2]**2)
+              scale_y = Math.sqrt(mat_arr[4]**2 + mat_arr[5]**2 + mat_arr[6]**2)
+              total_finish_table_area += (e.area * scale_x * scale_y) * 0.00064516
             end
           end
+        end
 
-        # 2. АНАЛИЗ И СОРТИРОВКА КИРПИЧЕЙ (LF, SP, SH8)
-        elsif clean_name_down.include?('кирпич') || clean_name_down.include?('palette_brick') || clean_name_down.include?('шб') || clean_name_down.include?('шамот') || clean_name =~ /^(LF|SP|SH8)/
+      elsif instance.respond_to?(:definition)
+        clean_name = instance.definition.name.gsub(/#\d+/, '').strip
+        clean_name_down = clean_name.downcase
+
+        # 2. АНАЛИЗ И СОРТИРОВКА КИРПИЧЕЙ
+        if clean_name_down.include?('кирпич') || clean_name_down.include?('palette_brick') || clean_name_down.include?('шб') || clean_name_down.include?('шамот') || clean_name =~ /^(LF|SP|SH8)/
           if clean_name =~ /^LF/ || clean_name_down.include?('лицевой') || clean_name_down.include?('облицовка')
             mat_code = "LF"
           elsif clean_name =~ /^SH8|^ШБ/ || clean_name_down.include?('шамот')
@@ -177,17 +168,16 @@ module PechnikEngineeringHub
             mat_code = "SP"
           end
 
-          # Определение фактической длины кирпича в мм
           length_mm = (clean_name =~ /-(\d+)-/) ? $1.to_i : (instance.definition.bounds.width.to_mm).round
           final_sku = "#{mat_code}-#{length_mm}-ST"
           
           brick_data.store([current_row, final_sku], brick_data.fetch([current_row, final_sku], 0) + 1)
-        # 3. ПОШТУЧНЫЙ УЧЕТ ПЕЧНОГО ЛИТЬЯ И ОБОРУДОВАНИЯ
+
+        # 3. ПОШТУЧНЫЙ УЧЕТ ЛИТЬЯ
         else
           unless clean_name_down.include?('temp') || clean_name_down.include?('init') || clean_name.empty? || clean_name_down == 'group' || clean_name_down == 'группа'
             hardware_data.store(clean_name, hardware_data.fetch(clean_name, 0) + 1)
 
-            # Синхронизация литья с матрицей рядов по текущему слою объекта
             if layer_name =~ /row_(\d+)|ряд_(\d+)/
               target_idx = ($1 || $2).to_i - 1
               if target_idx.between?(0, 53)
@@ -199,26 +189,26 @@ module PechnikEngineeringHub
         end
       end
 
-      # Рекурсивный спуск по иерархии вложенных групп и компонентов
       entities_to_parse = instance.respond_to?(:definition) ? instance.definition.entities : (instance.respond_to?(:entities) ? instance.entities : nil)
       if entities_to_parse
         entities_to_parse.each { |child| scan_spec.call(child, current_row, combined_transform) if child.is_a?(Sketchup::ComponentInstance) || child.is_a?(Sketchup::Group) }
       end
     end
 
-    # Запуск сквозного анализа геометрии по всем объектам модели
     puts "Запуск сквозного анализа геометрии..."
     model.active_entities.each { |e| scan_spec.call(e) if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group) }
 
-    # Передача собранных данных в метод физического синтеза отчета
     write_specification_report(model_title, brick_data, hardware_data, row_matrix, total_finish_table_area)
   end
-  # Физический синтез отчета и математический расчет веса
+
+  # ==============================================================================
+  # 4. ФИЗИЧЕСКИЙ СИНТЕЗ ОТЧЕТА И МАТЕМАТИЧЕСКИЙ РАСЧЕТ ВЕСА
+  # ==============================================================================
   def self.write_specification_report(model_title, brick_data, hardware_data, row_matrix, total_finish_table_area)
     output_path = "D:/pechnik-engineering-hub/02_specifications/specification_summary.txt"
     totals = { "LF" => 0.0, "SP" => 0.0, "SH8" => 0.0 }
 
-    # Агрегация данных порядовой матрицы кирпича с учетом коэффициентов половинчатости
+    # ФИКС v77.78: Распаковываем массив [row_str, sku] корректно
     brick_data.each do |key_pair, count|
       row_str = key_pair[0]
       sku     = key_pair[1]
@@ -237,11 +227,9 @@ module PechnikEngineeringHub
       row_matrix[row_idx][mat_type] += (count * weight)
     end
 
-    # Расчет финального сметного тоннажа в эквиваленте целых кирпичей
-    brick_data.keys.sort.each do |key_arr|
-      sku_id = key_arr[1]
-      count  = brick_data[key_arr]
-      sku_parts = sku_id.split('-')
+    brick_data.each do |key_pair, count|
+      sku = key_pair[1]
+      sku_parts = sku.split('-')
       mat_type  = sku_parts[0]
       length    = sku_parts[1].to_i
 
@@ -250,14 +238,12 @@ module PechnikEngineeringHub
       totals[mat_type] += added_weight
     end
 
-    # Авторасчет массы кирпичного ядра в тоннах (LF*3.7 + SP*3.5 + SH8*3.4)
     total_brick_weight = (totals["LF"] * WEIGHT_LF) + (totals["SP"] * WEIGHT_SP) + (totals["SH8"] * WEIGHT_SH8)
     total_tonnage = (total_brick_weight / 1000.0).round(2)
 
-    # Расчет смесей (10 мм красный кирпич -> 1.1 кг, 4/2 мм шамот -> 0.6 кг)
     mix_red_kg = ((totals["LF"] + totals["SP"]) * 1.1).round(0)
     mix_sh8_kg = (totals["SH8"] * 0.6).round(0)
-    # Физическое открытие и наполнение текстового отчета на диске D
+
     File.open(output_path, "w:UTF-8") do |file|
       file.puts "[MODEL_TITLE] : #{model_title}"
       file.puts "====================================================================================="
@@ -299,6 +285,7 @@ module PechnikEngineeringHub
           file.puts sprintf(" %-50s | %-30d", hw_name, hardware_data[hw_name])
         end
       end
+
       file.puts "\n====================================================================================="
       file.puts " ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ "
       file.puts "====================================================================================="
@@ -319,13 +306,9 @@ module PechnikEngineeringHub
       file.puts "====================================================================================="
     end
 
-    # Системный вывод всплывающего окна для полевого инженера
     UI.messagebox("СМЕТНЫЙ СИНТЕЗ v77.78 ВЫПОЛНЕН УСПЕШНО!\n\n" \
                  "Вес кирпичного ядра: #{total_tonnage} т\n" \
                  "Площадь столешниц: #{total_finish_table_area.round(2)} м²\n" \
                  "Данные сохранены в спецификацию.")
   end
 end
-# ==============================================================================
-# ПОЛНАЯ СБОРКА СКРИПТА СИНТАКСИСА v77.78 ЗАВЕРШЕНА УСПЕШНО
-# ==============================================================================
