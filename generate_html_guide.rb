@@ -2,8 +2,8 @@
 # Encoding: UTF-8
 
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v77.78 — ПОЛНАЯ ПОШАГОВАЯ СБОРКА БЕЗ ОБРЫВОВ
-# ЧАСТЬ 1: ИНИЦИАЛИЗАЦИЯ МОДУЛЯ И СБОР ДАННЫХ ИЗ СМЕТЫ СИНХРОНИЗИРОВАННЫЙ
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v77.78 — ПОЛНАЯ ЧИСТАЯ СБОРКА С МАССИВОМ ЗАМЕТОК НАВЕРХУ
+# ЧАСТЬ 1: ИНИЦИАЛИЗАЦИЯ И ВЫДЕЛЕННЫЙ МАССИВ ДЛЯ ТЕКСТА ЗАМЕТОК
 # ==============================================================================
 
 require 'fileutils'
@@ -11,12 +11,24 @@ require 'sketchup'
 
 module PechnikEngineeringHub
   def self.generate_html_guide
+    # --------------------------------------------------------------------------
+    # 📝 БЛОК ЗАПОЛНЕНИЯ ЗАМЕТОК (ВЫНЕСЕН НАВЕРХ ДЛЯ ВАШЕГО УДОБСТВА)
+    # Сюда можно писать любой текст. Если оставить "", будут пустые строчки под ручку.
+    # --------------------------------------------------------------------------
+    notes = Array.new(70, "")
+    
+    notes[7]  = "Важно: купить калиброванный пруток 10 мм и проверить базальтовый картон." # Для Стр. 7
+    notes[1]  = "Ряд 1: Тщательно проверить диагонали плиты, выставить углы строго 90 градусов."
+    notes[2]  = "Ряд 2: Контролировать перевязку швов, не допускать совпадения стыков."
+    notes[3]  = "Ряд 3: Здесь пишем текст для третьего ряда..."
+
+    # Сюда можно добавлять notes[13], notes[14] и так далее до 65 страницы...
+    # --------------------------------------------------------------------------
+
     model = Sketchup.active_model
     model_title = model.title.empty? ? "Барбекю комплекс" : model.title
     
-    # Жесткий базовый путь проекта по кодам запуска Александра
     base_dir = "D:/pechnik-engineering-hub"
-    
     spec_path = File.join(base_dir, "02_specifications/specification_summary.txt")
     output_html_path = File.join(base_dir, "03_web_guide/index.html")
     
@@ -119,7 +131,7 @@ module PechnikEngineeringHub
             "<div class='cover-subtitle'>Порядовое инженерное руководство повышенной точности</div>" \
             "<div class='cover-footer'>Новосибирск — #{Time.now.strftime('%d.%m.%Y')}</div></div>"
 
-    # Стр. 2: Введение журнального типа с точной почтой master-pechi@mail.ru
+    # Стр. 2: Введение
     html << "<div class='page'><div class='header-meta'><span>Проект #{project_code}</span><span>Введение</span></div>" \
             "<h1>Состав технической документации</h1><div class='intro-box'><div class='intro-text-side'>" \
             "<p>Настоящее рабочее руководство содержит исчерпывающие архитектурные разрезы, спецификацию материалов фундаментного основания, полную карту снабжения артикулов строительной керамики и порядовые схемы сборки отопительного комплекса.</p>" \
@@ -131,6 +143,7 @@ module PechnikEngineeringHub
     html << "<div class='page'><div class='header-meta'><span>Проект #{project_code} — Стр. 3</span><span>Общий вид изделия</span></div>" \
             "<h1>Общий вид готового комплекса</h1><div class='img-wrapper' style='height:145mm; border:1px solid #bdc3c7; border-radius:6px; background:#fff;'><img src='D:/pechnik-engineering-hub/01_scenes/drawings/main_preview.png'></div>" \
             "<div class='page-number'>3</div></div>"
+
     # Стр. 4: Карта материалов — Керамика
     html << "<div class='page'><div class='header-meta'><span>Проект #{project_code} — Стр. 4</span><span>Карта материалов</span></div>" \
             "<h1>Карта материалов — Облицовка и строительный кирпич</h1><div class='materials-container'>" \
@@ -179,7 +192,7 @@ module PechnikEngineeringHub
             "        <h3 style='margin: 0 0 2mm 0; color: #d35400; font-size: 10.5pt; border-bottom: 2px solid #eedcd0; padding-bottom: 1mm; text-transform: uppercase;'>2. Контроль геометрии</h3>" \
             "        <div style='font-size: 9.5pt; line-height: 1.45; color: #2c3e50;'>" \
             "          <b>• Метод прутка:</b> Для красного кирпича используйте стальной квадрат 10 мм как шаблон идеального шва.<br>" \
-            "          <b>• Шамотное ядро:</b> Швы очень тонкие (4 мм горизонт, 2 мм вертикаль). Используйте пластиковые крестики.<br>" \
+            "          <b>• Шамотное ядро:</b> Швы очень тонкие (4 мм горизонт, 2 мм вертикаль). Используйте plastic-крестики.<br>" \
             "          <b>• Правило 3 шагов:</b> Каждый ряд проверяйте трижды: пузырьковым уровнем вдоль, угольником на углах и рулеткой по диагоналям." \
             "        </div>" \
             "      </div>" \
@@ -210,7 +223,9 @@ module PechnikEngineeringHub
             "  </div>" \
             "  <div style='display: flex; align-items: center; width: 100%; height: 12mm; background: #fffdf9; border: 1px solid #e9d5c5; border-radius: 6px; margin-top: 3mm; padding: 0 4mm; box-sizing: border-box; font-size: 8.5pt; position: relative;'>" \
             "    <b style='color: #ffffff; background-color: #d35400; padding: 1mm 2.5mm; border-radius: 4px; margin-right: 4mm; text-transform: uppercase; letter-spacing: 0.7px; font-size: 7.5pt; font-weight: bold;'>Заметки</b>" \
-            "    <div style='flex: 1; height: 100%; background-image: linear-gradient(to bottom, transparent 95%, #eedcd0 95%); background-size: 100% 6mm; margin-top: 2mm; opacity: 0.8;'></div>" \
+            "    <div style='flex: 1; font-family: sans-serif; font-style: italic; color: #555; padding-top: 1mm; line-height: 1.2;'>" \
+            "      #{notes[7].empty? ? "<div style='height: 100%; background-image: linear-gradient(to bottom, transparent 95%, #eedcd0 95%); background-size: 100% 6mm; margin-top: 1mm; opacity: 0.8;'></div>" : notes[7]}" \
+            "    </div>" \
             "  </div>" \
             "  <div class='page-number'>7</div>" \
             "</div>"
@@ -230,7 +245,7 @@ module PechnikEngineeringHub
 
     # Стр. 8: Спецификация Часть 1
     html << "<div class='page'><div class='header-meta'><span>Проект #{project_code} — Стр. 8</span><span>Сводная спецификация материалов</span></div>" \
-            "<h1>Сводная спецификация материалов конструкции (Часть 1)</h1><table class='spec-table'><thead><tr><th>Наименование материала / Элемента снабжения</th><th>Расчетное количество</th></tr></thead><tbody>"
+            "<h1>Сводная спецификация материалов конструкции (Часть 1)</h1><table class='spec-table'><thead><tr><th>Наименование элемента снабжения</th><th>Расчетное количество</th></tr></thead><tbody>"
     part1.each { |item| name, qty = item.split(':'); html << "<tr><td>#{name}</td><td>#{qty}</td></tr>" }
     html << "</tbody></table><div class='page-number'>8</div></div>"
 
@@ -299,7 +314,9 @@ module PechnikEngineeringHub
               "  </div>" \
               "  <div style='display: flex; align-items: center; width: 100%; height: 12mm; background: #fffdf9; border: 1px solid #e9d5c5; border-radius: 6px; margin-top: 3mm; padding: 0 4mm; box-sizing: border-box; font-size: 8.5pt; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);'>" \
               "    <b style='color: #ffffff; background-color: #d35400; padding: 1mm 2.5mm; border-radius: 4px; margin-right: 4mm; text-transform: uppercase; letter-spacing: 0.7px; font-size: 7.5pt; font-weight: bold;'>Заметки</b>" \
-              "    <div style='flex: 1; height: 100%; background-image: linear-gradient(to bottom, transparent 95%, #eedcd0 95%); background-size: 100% 6mm; margin-top: 2mm; opacity: 0.8;'></div>" \
+              "    <div style='flex: 1; font-family: sans-serif; font-style: italic; color: #555; padding-top: 1mm; line-height: 1.2;'> " \
+              "      #{notes[r].nil? || notes[r].empty? ? "<div style='height: 100%; background-image: linear-gradient(to bottom, transparent 95%, #eedcd0 95%); background-size: 100% 6mm; margin-top: 1mm; opacity: 0.8;'></div>" : notes[r]}" \
+              "    </div>" \
               "  </div>" \
               "  <div class='page-number'>#{cp}</div>" \
               "</div>"
@@ -309,6 +326,6 @@ module PechnikEngineeringHub
     
     File.open(output_html_path, "w:UTF-8") { |f| f.write(html) }
     puts "[+] Альбом успешно сгенерирован: #{output_html_path}"
-    UI.messagebox("ПОЛНАЯ СБОРКА ЗАВЕРШЕНА, АЛЕКСАНДР!\n\nВсе 6 шагов объединены. Никаких обрывов. Код готов к тесту в SketchUp!")
+    UI.messagebox("ОБНОВЛЕНИЕ ЗАВЕРШЕНО!\n\nТеперь индексы заметок привязаны к номерам РЯДОВ. Проверяйте!")
   end
 end
