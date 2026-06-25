@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Плеер порядовки | Pechnik Engineering Hub</title>
+    <!-- Импорт-карта для Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <style>
+        /* --- Базовый сброс --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            background: #111;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- Экран ввода пароля --- */
+        #auth-overlay {
+            position: fixed; inset: 0;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #auth-overlay h2 {
+            color: #ff5722;
+            font-weight: 300;
+            letter-spacing: 2px;
+            font-size: 28px;
+        }
+        #auth-overlay input {
+            padding: 14px 24px;
+            font-size: 20px;
+            border-radius: 8px;
+            border: 2px solid #ff5722;
+            background: #222;
+            color: #fff;
+            width: 300px;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+        }
+        #auth-overlay input:focus {
+            box-shadow: 0 0 20px rgba(255,87,34,0.3);
+        }
+        #auth-btn {
+            padding: 14px 48px;
+            background: #ff5722;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+        #auth-btn:hover {
+            background: #e64a19;
+            transform: scale(1.02);
+        }
+        #auth-error {
+            color: #ff1744;
+            font-size: 16px;
+            display: none;
+            margin-top: 10px;
+        }
+
+        /* --- Основной контент (скрыт до авторизации) --- */
+        #main-content {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        /* --- 3D-холст --- */
+        #canvas-container {
+            flex: 1;
+            width: 100%;
+            background: #111;
+            position: relative;
+            overflow: hidden;
+        }
+        #pechnik-webgl-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #loader-status {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff5722;
+            font-weight: bold;
+            font-size: 1.4rem;
+            z-index: 5;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(0,0,0,0.9);
+            pointer-events: none;
+        }
+        #telemetry-hud {
+            position: absolute;
+            top: 16px; left: 16px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00ffcc;
+            border-radius: 6px;
+            border: 1px solid #2a2a2a;
+            pointer-events: none;
+            z-index: 4;
+            user-select: none;
+            backdrop-filter: blur(4px);
+        }
+
+        /* --- Нижняя панель управления --- */
+        #bottom-panel {
+            background: rgba(15, 15, 15, 0.98);
+            border-top: 3px solid #ff5722;
+            padding: 14px 20px 20px;
+            color: #fff;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+            flex-shrink: 0;
+            width: 100%;
+        }
+        .ui-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        #layer-counter {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ff5722;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .mode-toggles {
+            display: flex;
+            gap: 8px;
+        }
+        .ui-btn {
+            background: #2b2b2b;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px 18px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .ui-btn.active {
+            background: #ff5722;
+            border-color: #ff5722;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(255,87,34,0.4);
+        }
+        .ui-btn:active { transform: scale(0.95); }
+
+        .slider-wrapper {
+            margin-bottom: 14px;
+        }
+        .slider-wrapper input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #2a2a2a;
+            border-radius: 4px;
+            outline: none;
+            accent-color: #ff5722;
+        }
+        .slider-wrapper input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ff5722;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 0 12px rgba(255,87,34,0.6);
+        }
+
+        .material-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .mat-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #aaa;
+            padding: 10px 6px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .mat-btn.active {
+            background: #2d2d2d;
+            border-color: #ff5722;
+            color: #fff;
+            box-shadow: inset 0 0 0 1px #ff5722;
+        }
+        .mat-btn:active { transform: scale(0.95); }
+        .color-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .color-dot.facade     { background: #4caf50; }
+        .color-dot.building   { background: #ff5722; }
+        .color-dot.refractory { background: #ffeb3b; }
+        .color-dot.iron       { background: #607d8b; }
+        .color-dot.table      { background: #ff9800; }
+        .color-dot.misc       { background: #795548; }
+
+        @media (max-width: 600px) {
+            #layer-counter { font-size: 16px; }
+            .ui-btn { font-size: 12px; padding: 6px 12px; }
+            .mat-btn { font-size: 11px; padding: 8px 4px; }
+            .material-grid { gap: 6px; }
+            #telemetry-hud { font-size: 10px; padding: 4px 8px; }
+            #auth-overlay h2 { font-size: 22px; }
+            #auth-overlay input { width: 260px; font-size: 18px; padding: 12px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ЭКРАН АВТОРИЗАЦИИ -->
+<div id="auth-overlay">
+    <h2>🔒 Введите пароль</h2>
+    <input type="password" id="password-input" placeholder="Пароль" autofocus>
+    <button id="auth-btn">Войти</button>
+    <div id="auth-error">Неверный пароль</div>
+</div>
+
+<!-- ОСНОВНОЙ КОНТЕНТ (3D + панель) -->
+<div id="main-content">
+    <div id="canvas-container">
+        <div id="loader-status">⏳ ЗАГРУЗКА 3D МОДЕЛИ...</div>
+        <div id="telemetry-hud">WebGL: инициализация...</div>
+        <canvas id="pechnik-webgl-canvas"></canvas>
+    </div>
+
+    <div id="bottom-panel">
+        <div class="ui-row">
+            <span id="layer-counter">РЯД: 54 / 54</span>
+            <div class="mode-toggles">
+                <button id="btn-accum" class="ui-btn active" data-mode="ACCUMULATIVE">Сборка</button>
+                <button id="btn-strict" class="ui-btn" data-mode="STRICT">Рентген</button>
+            </div>
+        </div>
+        <div class="ui-row slider-wrapper">
+            <input type="range" id="layer-slider" min="1" max="54" value="54" step="1">
+        </div>
+        <div class="material-grid">
+            <button class="mat-btn active" data-tag="palette_brick_facade"><span class="color-dot facade"></span>Фасад</button>
+            <button class="mat-btn active" data-tag="palette_brick_building"><span class="color-dot building"></span>Забутовка</button>
+            <button class="mat-btn active" data-tag="palette_brick_refractory"><span class="color-dot refractory"></span>Шамот</button>
+            <button class="mat-btn active" data-tag="palette_iron"><span class="color-dot iron"></span>Литье</button>
+            <button class="mat-btn active" data-tag="finish_table"><span class="color-dot table"></span>Столешница</button>
+            <button class="mat-btn active" data-tag="finish_misc"><span class="color-dot misc"></span>Отделка</button>
+        </div>
+    </div>
+</div>
+
+<!-- СКРИПТ АВТОРИЗАЦИИ И ЗАГРУЗКИ 3D -->
+<script>
+    // --- Пароль (можно изменить) ---
+    const PASSWORD = 'pechnik2026';
+
+    const authOverlay = document.getElementById('auth-overlay');
+    const mainContent = document.getElementById('main-content');
+    const passInput = document.getElementById('password-input');
+    const authBtn = document.getElementById('auth-btn');
+    const errorDiv = document.getElementById('auth-error');
+
+    // Проверка сессии
+    if (sessionStorage.getItem('pechnik_auth') === 'true') {
+        authOverlay.style.display = 'none';
+        mainContent.style.display = 'flex';
+        init3D();
+    }
+
+    function attemptAuth() {
+        if (passInput.value.trim() === PASSWORD) {
+            sessionStorage.setItem('pechnik_auth', 'true');
+            authOverlay.style.display = 'none';
+            mainContent.style.display = 'flex';
+            errorDiv.style.display = 'none';
+            init3D();
+        } else {
+            errorDiv.style.display = 'block';
+            passInput.value = '';
+            passInput.focus();
+        }
+    }
+
+    authBtn.addEventListener('click', attemptAuth);
+    passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAuth(); });
+
+    // --- Функция инициализации 3D ---
+    function init3D() {
+        // Динамически загружаем модуль, чтобы он не выполнялся до авторизации
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.textContent = `
+            import * as THREE from 'three';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+            // --- НАСТРОЙКИ ---
+            // !!! УКАЖИТЕ ВЕРНЫЙ ПУТЬ К ВАШЕЙ МОДЕЛИ !!!
+            const MODEL_URL = './test3d/Erker-770-test_export.glb';
+            // Если файл находится в той же папке, что и player.html, то можно просто:
+            // const MODEL_URL = './Erker-770-test_export.glb';
+
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('pechnik-webgl-canvas');
+            const statusDisplay = document.getElementById('loader-status');
+            const telemetryHud = document.getElementById('telemetry-hud');
+
+            // --- СЦЕНА ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+
+            // --- КАМЕРА ---
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 8);
+
+            // --- РЕНДЕРЕР ---
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // --- УПРАВЛЕНИЕ ---
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.maxPolarAngle = Math.PI / 2 - 0.01;
+            controls.minDistance = 1.5;
+            controls.maxDistance = 20;
+            controls.target.set(0, 0.5, 0);
+
+            // --- ОСВЕЩЕНИЕ ---
+            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+            dirLight.position.set(5, 12, 8);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            const d = 10;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            dirLight.shadow.camera.near = 1;
+            dirLight.shadow.camera.far = 20;
+            scene.add(dirLight);
+
+            const backLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+            backLight.position.set(-3, 1, -5);
+            scene.add(backLight);
+
+            // --- СОСТОЯНИЕ ---
+            let currentLayer = 54;
+            let displayMode = 'ACCUMULATIVE';
+            const activeMaterials = {
+                palette_brick_facade: true,
+                palette_brick_building: true,
+                palette_brick_refractory: true,
+                palette_iron: true,
+                finish_table: true,
+                finish_misc: true
+            };
+
+            // --- СИНХРОНИЗАЦИЯ ВИДИМОСТИ ---
+            function hardSync() {
+                if (!window.pechnikModel) return;
+                window.pechnikModel.traverse((obj) => {
+                    if (obj.isMesh) {
+                        let rowNum = null;
+                        let matTag = null;
+                        const names = [obj.name, obj.parent ? obj.parent.name : ''].join(' ').toLowerCase();
+                        const match = names.match(/(ряд|row|r)[_\\s]*(\\d+)/);
+                        if (match) rowNum = parseInt(match[2]);
+
+                        const tags = ['palette_brick_facade', 'palette_brick_building', 'palette_brick_refractory',
+                                      'palette_iron', 'finish_table', 'finish_misc'];
+                        for (const tag of tags) {
+                            if (names.includes(tag.toLowerCase()) ||
+                                (obj.userData && JSON.stringify(obj.userData).toLowerCase().includes(tag.toLowerCase()))) {
+                                matTag = tag;
+                                break;
+                            }
+                        }
+
+                        let rowVisible = true;
+                        if (rowNum !== null) {
+                            rowVisible = (displayMode === 'ACCUMULATIVE') ? (rowNum <= currentLayer) : (rowNum === currentLayer);
+                        }
+                        let matVisible = true;
+                        if (matTag && activeMaterials.hasOwnProperty(matTag)) {
+                            matVisible = activeMaterials[matTag];
+                        }
+                        obj.visible = rowVisible && matVisible;
+                    }
+                });
+                updateTelemetry();
+            }
+
+            // --- ТЕЛЕМЕТРИЯ ---
+            function updateTelemetry() {
+                const info = renderer.info;
+                telemetryHud.innerText = \`Полигоны: \${info.render.triangles} | Геометрии: \${info.memory.geometries} | Текстуры: \${info.memory.textures}\`;
+                console.log("=== PECHNIK HUB: АУДИТ ===");
+                console.log(\`Геометрий: \${info.memory.geometries}, Текстур: \${info.memory.textures}, Треугольников: \${info.render.triangles}\`);
+            }
+
+            // --- ЗАГРУЗКА МОДЕЛИ ---
+            const loader = new GLTFLoader();
+            loader.load(
+                MODEL_URL,
+                (gltf) => {
+                    const model = gltf.scene;
+                    window.pechnikModel = model;
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    model.position.y += box.min.y * -1;
+                    const midY = (box.max.y - box.min.y) / 2;
+                    controls.target.set(0, midY, 0);
+                    scene.add(model);
+                    statusDisplay.style.display = 'none';
+                    hardSync();
+                    updateTelemetry();
+                },
+                (xhr) => {
+                    if (xhr.total > 0) {
+                        const progress = Math.round((xhr.loaded / xhr.total) * 100);
+                        statusDisplay.innerText = \`⏳ ЗАГРУЗКА: \${progress}%\`;
+                    }
+                },
+                (error) => {
+                    console.error('Ошибка загрузки:', error);
+                    statusDisplay.innerText = '❌ ОШИБКА ЗАГРУЗКИ МОДЕЛИ\\nПроверьте путь или формат файла.';
+                    statusDisplay.style.color = '#ff1744';
+                }
+            );
+
+            // --- АНИМАЦИЯ ---
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // --- РЕСАЙЗ ---
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+
+            // --- UI СОБЫТИЯ ---
+            document.addEventListener('DOMContentLoaded', () => {
+                const slider = document.getElementById('layer-slider');
+                const counter = document.getElementById('layer-counter');
+
+                slider.addEventListener('input', (e) => {
+                    currentLayer = parseInt(e.target.value);
+                    counter.innerText = \`РЯД: \${currentLayer} / 54\`;
+                    hardSync();
+                });
+
+                document.getElementById('btn-accum').addEventListener('click', function() {
+                    this.classList.add('active');
+                    document.getElementById('btn-strict').classList.remove('active');
+                    displayMode = 'ACCUMULATIVE';
+                    hardSync();
+                });
+                document.getElementById('btn-strict').addEventListener('click', function() {
+                    this.classList.add('active');
+                    document.getElementById('btn-accum').classList.remove('active');
+                    displayMode = 'STRICT';
+                    hardSync();
+                });
+
+                document.querySelectorAll('.material-grid .mat-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        this.classList.toggle('active');
+                        const tag = this.getAttribute('data-tag');
+                        activeMaterials[tag] = this.classList.contains('active');
+                        hardSync();
+                    });
+                });
+            });
+
+            // --- ОТЛАДКА ---
+            window.__pechnik = { scene, camera, renderer, controls, hardSync, updateTelemetry };
+            console.log('✅ Печной плеер (новая страница) инициализирован.');
+        `;
+        document.body.appendChild(script);
+    }
+</script>
+</body>
+</html>
