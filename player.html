@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Плеер порядовки | Pechnik Engineering Hub</title>
-    <!-- Импорт-карта для Three.js -->
+    <title>3D Инженерный плеер | Pechnik Hub</title>
     <script type="importmap">
     {
         "imports": {
@@ -14,82 +13,35 @@
     }
     </script>
     <style>
-        /* --- Базовый сброс --- */
+        /* ===== Стили (без изменений, те же что и в предыдущей версии) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            width: 100%; height: 100%;
-            background: #111;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-        }
+        html, body { width: 100%; height: 100%; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
 
-        /* --- Экран ввода пароля --- */
         #auth-overlay {
-            position: fixed; inset: 0;
-            background: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            flex-direction: column;
-            gap: 20px;
+            position: fixed; inset: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 20px;
         }
-        #auth-overlay h2 {
-            color: #ff5722;
-            font-weight: 300;
-            letter-spacing: 2px;
-            font-size: 28px;
-        }
+        #auth-overlay h2 { color: #ff5722; font-weight: 300; letter-spacing: 2px; font-size: 28px; }
         #auth-overlay input {
-            padding: 14px 24px;
-            font-size: 20px;
-            border-radius: 8px;
-            border: 2px solid #ff5722;
-            background: #222;
-            color: #fff;
-            width: 300px;
-            text-align: center;
-            outline: none;
-            transition: 0.2s;
+            padding: 14px 24px; font-size: 20px; border-radius: 8px; border: 2px solid #ff5722; background: #222; color: #fff; width: 300px; text-align: center; outline: none;
         }
-        #auth-overlay input:focus {
-            box-shadow: 0 0 20px rgba(255,87,34,0.3);
-        }
-        #auth-btn {
-            padding: 14px 48px;
-            background: #ff5722;
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 600;
-        }
-        #auth-btn:hover {
-            background: #e64a19;
-            transform: scale(1.02);
-        }
-        #auth-error {
-            color: #ff1744;
-            font-size: 16px;
-            display: none;
-            margin-top: 10px;
-        }
+        #auth-btn { padding: 14px 48px; background: #ff5722; border: none; border-radius: 8px; color: #fff; font-size: 20px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+        #auth-btn:hover { background: #e64a19; transform: scale(1.02); }
+        #auth-error { color: #ff1744; font-size: 16px; display: none; margin-top: 10px; }
 
-        /* --- Основной контент (скрыт до авторизации) --- */
-        #main-content {
+        #main {
             display: none;
             width: 100%;
             height: 100%;
             flex-direction: column;
         }
-
-        /* --- 3D-холст --- */
+        #top-row {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
         #canvas-container {
             flex: 1;
-            width: 100%;
-            background: #111;
+            background: #888888;
             position: relative;
             overflow: hidden;
         }
@@ -102,157 +54,245 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            color: #ff5722;
+            color: #fff;
             font-weight: bold;
             font-size: 1.4rem;
             z-index: 5;
             text-align: center;
-            text-shadow: 0 0 20px rgba(0,0,0,0.9);
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
             pointer-events: none;
         }
         #telemetry-hud {
             position: absolute;
-            top: 16px; left: 16px;
-            background: rgba(0,0,0,0.8);
-            padding: 8px 14px;
+            bottom: 16px; left: 16px;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
             font-family: 'Courier New', monospace;
-            font-size: 13px;
+            font-size: 12px;
             color: #00ffcc;
-            border-radius: 6px;
-            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            border: 1px solid #333;
             pointer-events: none;
             z-index: 4;
             user-select: none;
-            backdrop-filter: blur(4px);
         }
 
-        /* --- Нижняя панель управления --- */
-        #bottom-panel {
-            background: rgba(15, 15, 15, 0.98);
-            border-top: 3px solid #ff5722;
-            padding: 14px 20px 20px;
-            color: #fff;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
-            flex-shrink: 0;
-            width: 100%;
-        }
-        .ui-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        #layer-counter {
-            font-size: 20px;
-            font-weight: 700;
-            color: #ff5722;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-        .mode-toggles {
-            display: flex;
-            gap: 8px;
-        }
-        .ui-btn {
-            background: #2b2b2b;
-            border: 1px solid #444;
-            color: #ccc;
-            padding: 8px 18px;
+        #info-panel {
+            width: 340px;
+            min-width: 280px;
+            background: rgba(20, 20, 20, 0.95);
+            border-left: 2px solid #ff5722;
+            padding: 12px 16px;
+            color: #ddd;
+            overflow-y: auto;
             font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 3;
+            max-height: 100%;
         }
-        .ui-btn.active {
-            background: #ff5722;
-            border-color: #ff5722;
-            color: #fff;
-            box-shadow: 0 0 16px rgba(255,87,34,0.4);
+        #info-panel .panel-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+            flex-shrink: 0;
         }
-        .ui-btn:active { transform: scale(0.95); }
-
-        .slider-wrapper {
-            margin-bottom: 14px;
-        }
-        .slider-wrapper input[type="range"] {
-            width: 100%;
-            height: 8px;
-            -webkit-appearance: none;
-            background: #2a2a2a;
-            border-radius: 4px;
-            outline: none;
-            accent-color: #ff5722;
-        }
-        .slider-wrapper input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #ff5722;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 0 12px rgba(255,87,34,0.6);
-        }
-
-        .material-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-        .mat-btn {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #aaa;
-            padding: 10px 6px;
+        #info-panel .panel-tabs button {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 4px 12px;
             font-size: 13px;
-            border-radius: 4px;
             cursor: pointer;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        #info-panel .panel-tabs button.active {
+            color: #fff;
+            background: #2a2a2a;
+        }
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .panel-content .tab-page { display: none; }
+        .panel-content .tab-page.active { display: block; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 13px;
+        }
+        .info-row .label { color: #aaa; }
+        .info-row .value { font-weight: 600; color: #fff; }
+        .info-row .value.lf { color: #4caf50; }
+        .info-row .value.sp { color: #ff5722; }
+        .info-row .value.sh8 { color: #ffeb3b; }
+        .casting-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .casting-tag { background: #2a2a2a; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid #555; }
+        .note-box {
+            background: #1e1e1e;
+            border-left: 3px solid #ff5722;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-style: italic;
+            color: #bbb;
+            font-size: 13px;
+            margin-top: 4px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+        .totals-box {
+            background: #1a1a1a;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .totals-box .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+
+        .layer-tools {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 4px 0 8px;
+        }
+        .layer-tools button {
+            background: #2a2a2a;
+            border: none;
+            color: #ccc;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            border: 1px solid #444;
+            transition: 0.1s;
+        }
+        .layer-tools button:hover { background: #3a3a3a; }
+        .layer-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 4px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .layer-grid label {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: 0.2s;
-            font-weight: 500;
+            font-size: 11px;
+            background: #1e1e1e;
+            border-radius: 3px;
+            padding: 2px 0;
+            cursor: pointer;
+            border: 1px solid #333;
+            transition: 0.1s;
+            color: #aaa;
         }
-        .mat-btn.active {
+        .layer-grid label.active-layer {
             background: #2d2d2d;
             border-color: #ff5722;
             color: #fff;
-            box-shadow: inset 0 0 0 1px #ff5722;
         }
-        .mat-btn:active { transform: scale(0.95); }
-        .color-dot {
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            display: inline-block;
-            flex-shrink: 0;
+        .layer-grid input[type="checkbox"] { display: none; }
+        .layer-grid label span { pointer-events: none; }
+
+        .material-group {
+            margin-bottom: 8px;
+        }
+        .material-group .group-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ff5722;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+        }
+        .material-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            cursor: pointer;
+            border-bottom: 1px solid #222;
+        }
+        .material-item .color-dot {
+            width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
             border: 1px solid rgba(255,255,255,0.2);
         }
-        .color-dot.facade     { background: #4caf50; }
-        .color-dot.building   { background: #ff5722; }
-        .color-dot.refractory { background: #ffeb3b; }
-        .color-dot.iron       { background: #607d8b; }
-        .color-dot.table      { background: #ff9800; }
-        .color-dot.misc       { background: #795548; }
+        .material-item .mat-label { flex: 1; font-size: 13px; }
+        .material-item .mat-count { font-size: 12px; color: #888; }
+        .material-item input[type="checkbox"] { display: none; }
+        .material-item .mat-label { opacity: 0.6; transition: 0.2s; }
+        .material-item.active .mat-label { opacity: 1; color: #fff; }
+        .material-tools {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .material-tools button {
+            background: #2a2a2a;
+            border: none;
+            color: #ccc;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+        .material-tools button:hover { background: #3a3a3a; }
 
-        @media (max-width: 600px) {
-            #layer-counter { font-size: 16px; }
-            .ui-btn { font-size: 12px; padding: 6px 12px; }
-            .mat-btn { font-size: 11px; padding: 8px 4px; }
-            .material-grid { gap: 6px; }
+        #bottom-panel {
+            background: rgba(15, 15, 15, 0.98);
+            border-top: 3px solid #ff5722;
+            padding: 10px 16px 16px;
+            color: #fff;
+            flex-shrink: 0;
+            width: 100%;
+        }
+        .ui-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        #layer-counter { font-size: 18px; font-weight: 700; color: #ff5722; }
+        .mode-toggles { display: flex; gap: 6px; }
+        .ui-btn {
+            background: #2b2b2b; border: 1px solid #444; color: #ccc; padding: 6px 14px; font-size: 13px;
+            border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: 500;
+        }
+        .ui-btn.active { background: #ff5722; border-color: #ff5722; color: #fff; box-shadow: 0 0 12px rgba(255,87,34,0.4); }
+        .slider-wrapper input[type="range"] {
+            width: 100%; height: 8px; -webkit-appearance: none; background: #2a2a2a; border-radius: 4px; outline: none; accent-color: #ff5722;
+        }
+        .slider-wrapper input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #ff5722; cursor: pointer;
+            border: 2px solid #fff; box-shadow: 0 0 12px rgba(255,87,34,0.6);
+        }
+
+        @media (max-width: 768px) {
+            #top-row { flex-direction: column; }
+            #info-panel {
+                width: 100%;
+                min-width: unset;
+                max-height: 200px;
+                border-left: none;
+                border-top: 2px solid #ff5722;
+                padding: 8px 12px;
+                font-size: 12px;
+                overflow-y: auto;
+            }
+            .layer-grid { max-height: 100px; grid-template-columns: repeat(9, 1fr); }
             #telemetry-hud { font-size: 10px; padding: 4px 8px; }
-            #auth-overlay h2 { font-size: 22px; }
-            #auth-overlay input { width: 260px; font-size: 18px; padding: 12px 18px; }
         }
     </style>
 </head>
 <body>
 
-<!-- ЭКРАН АВТОРИЗАЦИИ -->
 <div id="auth-overlay">
     <h2>🔒 Введите пароль</h2>
     <input type="password" id="password-input" placeholder="Пароль" autofocus>
@@ -260,14 +300,61 @@
     <div id="auth-error">Неверный пароль</div>
 </div>
 
-<!-- ОСНОВНОЙ КОНТЕНТ (3D + панель) -->
-<div id="main-content">
-    <div id="canvas-container">
-        <div id="loader-status">⏳ ЗАГРУЗКА 3D МОДЕЛИ...</div>
-        <div id="telemetry-hud">WebGL: инициализация...</div>
-        <canvas id="pechnik-webgl-canvas"></canvas>
+<div id="main">
+    <div id="top-row">
+        <div id="canvas-container">
+            <div id="loader-status">⏳ ЗАГРУЗКА 3D МОДЕЛИ...</div>
+            <div id="telemetry-hud">WebGL: инициализация...</div>
+            <canvas id="pechnik-webgl-canvas"></canvas>
+        </div>
+        <div id="info-panel">
+            <div class="panel-tabs">
+                <button class="active" data-tab="tab-info">📊 Инфо</button>
+                <button data-tab="tab-layers">📦 Слои</button>
+                <button data-tab="tab-materials">🎨 Материалы</button>
+            </div>
+            <div class="panel-content">
+                <div id="tab-info" class="tab-page active">
+                    <h3 style="color:#ff5722; font-size:16px; margin-bottom:4px;">Ряд <span id="panel-row-num">54</span></h3>
+                    <div>
+                        <div class="info-row"><span class="label">🧱 Фасад (LF)</span><span class="value lf" id="panel-lf">0</span></div>
+                        <div class="info-row"><span class="label">🧱 Строительный (SP)</span><span class="value sp" id="panel-sp">0</span></div>
+                        <div class="info-row"><span class="label">🔥 Шамот (SH8)</span><span class="value sh8" id="panel-sh8">0</span></div>
+                    </div>
+                    <div>
+                        <div class="label" style="font-size:12px; color:#aaa;">⚙️ Литьё</div>
+                        <div class="casting-list" id="panel-casting"></div>
+                    </div>
+                    <div class="note-box" id="panel-note">Заметок нет</div>
+                    <div class="totals-box">
+                        <div class="total-row"><span>Всего LF</span><span id="total-lf">0</span></div>
+                        <div class="total-row"><span>Всего SP</span><span id="total-sp">0</span></div>
+                        <div class="total-row"><span>Всего SH8</span><span id="total-sh8">0</span></div>
+                        <div class="total-row"><span>Вес кладки</span><span id="total-weight">0 т</span></div>
+                    </div>
+                </div>
+                <div id="tab-layers" class="tab-page">
+                    <h3 style="color:#ff5722; font-size:16px; margin-bottom:4px;">Управление слоями</h3>
+                    <div class="layer-tools">
+                        <button id="layer-select-all">Все</button>
+                        <button id="layer-deselect-all">Снять</button>
+                        <button id="layer-invert">Инверт</button>
+                        <button id="layer-even">Чётные</button>
+                        <button id="layer-odd">Нечётные</button>
+                    </div>
+                    <div id="layer-grid-container" class="layer-grid"></div>
+                </div>
+                <div id="tab-materials" class="tab-page">
+                    <h3 style="color:#ff5722; font-size:16px; margin-bottom:4px;">Управление материалами</h3>
+                    <div class="material-tools">
+                        <button id="mat-select-all">Показать все</button>
+                        <button id="mat-deselect-all">Скрыть все</button>
+                    </div>
+                    <div id="material-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
-
     <div id="bottom-panel">
         <div class="ui-row">
             <span id="layer-counter">РЯД: 54 / 54</span>
@@ -279,262 +366,587 @@
         <div class="ui-row slider-wrapper">
             <input type="range" id="layer-slider" min="1" max="54" value="54" step="1">
         </div>
-        <div class="material-grid">
-            <button class="mat-btn active" data-tag="palette_brick_facade"><span class="color-dot facade"></span>Фасад</button>
-            <button class="mat-btn active" data-tag="palette_brick_building"><span class="color-dot building"></span>Забутовка</button>
-            <button class="mat-btn active" data-tag="palette_brick_refractory"><span class="color-dot refractory"></span>Шамот</button>
-            <button class="mat-btn active" data-tag="palette_iron"><span class="color-dot iron"></span>Литье</button>
-            <button class="mat-btn active" data-tag="finish_table"><span class="color-dot table"></span>Столешница</button>
-            <button class="mat-btn active" data-tag="finish_misc"><span class="color-dot misc"></span>Отделка</button>
-        </div>
     </div>
 </div>
 
-<!-- СКРИПТ АВТОРИЗАЦИИ И ЗАГРУЗКИ 3D -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
 <script>
-    // --- Пароль (можно изменить) ---
-    const PASSWORD = 'pechnik2026';
+    // ============================================================
+    // 1. АВТОРИЗАЦИЯ (без изменений)
+    // ============================================================
+    (function() {
+        const PASSWORD = 'pechnik2026';
+        const overlay = document.getElementById('auth-overlay');
+        const main = document.getElementById('main');
+        const passInput = document.getElementById('password-input');
+        const authBtn = document.getElementById('auth-btn');
+        const errorDiv = document.getElementById('auth-error');
 
-    const authOverlay = document.getElementById('auth-overlay');
-    const mainContent = document.getElementById('main-content');
-    const passInput = document.getElementById('password-input');
-    const authBtn = document.getElementById('auth-btn');
-    const errorDiv = document.getElementById('auth-error');
-
-    // Проверка сессии
-    if (sessionStorage.getItem('pechnik_auth') === 'true') {
-        authOverlay.style.display = 'none';
-        mainContent.style.display = 'flex';
-        init3D();
-    }
-
-    function attemptAuth() {
-        if (passInput.value.trim() === PASSWORD) {
-            sessionStorage.setItem('pechnik_auth', 'true');
-            authOverlay.style.display = 'none';
-            mainContent.style.display = 'flex';
-            errorDiv.style.display = 'none';
-            init3D();
-        } else {
-            errorDiv.style.display = 'block';
-            passInput.value = '';
-            passInput.focus();
+        if (sessionStorage.getItem('pechnik_auth') === 'true') {
+            overlay.style.display = 'none';
+            main.style.display = 'flex';
+            initApp();
         }
-    }
 
-    authBtn.addEventListener('click', attemptAuth);
-    passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAuth(); });
-
-    // --- Функция инициализации 3D ---
-    function init3D() {
-        // Динамически загружаем модуль, чтобы он не выполнялся до авторизации
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.textContent = `
-            import * as THREE from 'three';
-            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-            // --- НАСТРОЙКИ ---
-            // !!! УКАЖИТЕ ВЕРНЫЙ ПУТЬ К ВАШЕЙ МОДЕЛИ !!!
-            const MODEL_URL = './test3d/Erker-770-test_export.glb';
-            // Если файл находится в той же папке, что и player.html, то можно просто:
-            // const MODEL_URL = './Erker-770-test_export.glb';
-
-            const container = document.getElementById('canvas-container');
-            const canvas = document.getElementById('pechnik-webgl-canvas');
-            const statusDisplay = document.getElementById('loader-status');
-            const telemetryHud = document.getElementById('telemetry-hud');
-
-            // --- СЦЕНА ---
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111111);
-
-            // --- КАМЕРА ---
-            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(5, 5, 8);
-
-            // --- РЕНДЕРЕР ---
-            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            // --- УПРАВЛЕНИЕ ---
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.08;
-            controls.maxPolarAngle = Math.PI / 2 - 0.01;
-            controls.minDistance = 1.5;
-            controls.maxDistance = 20;
-            controls.target.set(0, 0.5, 0);
-
-            // --- ОСВЕЩЕНИЕ ---
-            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambient);
-
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
-            dirLight.position.set(5, 12, 8);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            const d = 10;
-            dirLight.shadow.camera.left = -d;
-            dirLight.shadow.camera.right = d;
-            dirLight.shadow.camera.top = d;
-            dirLight.shadow.camera.bottom = -d;
-            dirLight.shadow.camera.near = 1;
-            dirLight.shadow.camera.far = 20;
-            scene.add(dirLight);
-
-            const backLight = new THREE.DirectionalLight(0x4488ff, 0.3);
-            backLight.position.set(-3, 1, -5);
-            scene.add(backLight);
-
-            // --- СОСТОЯНИЕ ---
-            let currentLayer = 54;
-            let displayMode = 'ACCUMULATIVE';
-            const activeMaterials = {
-                palette_brick_facade: true,
-                palette_brick_building: true,
-                palette_brick_refractory: true,
-                palette_iron: true,
-                finish_table: true,
-                finish_misc: true
-            };
-
-            // --- СИНХРОНИЗАЦИЯ ВИДИМОСТИ ---
-            function hardSync() {
-                if (!window.pechnikModel) return;
-                window.pechnikModel.traverse((obj) => {
-                    if (obj.isMesh) {
-                        let rowNum = null;
-                        let matTag = null;
-                        const names = [obj.name, obj.parent ? obj.parent.name : ''].join(' ').toLowerCase();
-                        const match = names.match(/(ряд|row|r)[_\\s]*(\\d+)/);
-                        if (match) rowNum = parseInt(match[2]);
-
-                        const tags = ['palette_brick_facade', 'palette_brick_building', 'palette_brick_refractory',
-                                      'palette_iron', 'finish_table', 'finish_misc'];
-                        for (const tag of tags) {
-                            if (names.includes(tag.toLowerCase()) ||
-                                (obj.userData && JSON.stringify(obj.userData).toLowerCase().includes(tag.toLowerCase()))) {
-                                matTag = tag;
-                                break;
-                            }
-                        }
-
-                        let rowVisible = true;
-                        if (rowNum !== null) {
-                            rowVisible = (displayMode === 'ACCUMULATIVE') ? (rowNum <= currentLayer) : (rowNum === currentLayer);
-                        }
-                        let matVisible = true;
-                        if (matTag && activeMaterials.hasOwnProperty(matTag)) {
-                            matVisible = activeMaterials[matTag];
-                        }
-                        obj.visible = rowVisible && matVisible;
-                    }
-                });
-                updateTelemetry();
+        function attemptAuth() {
+            if (passInput.value.trim() === PASSWORD) {
+                sessionStorage.setItem('pechnik_auth', 'true');
+                overlay.style.display = 'none';
+                main.style.display = 'flex';
+                errorDiv.style.display = 'none';
+                initApp();
+            } else {
+                errorDiv.style.display = 'block';
+                passInput.value = '';
+                passInput.focus();
             }
+        }
+        authBtn.addEventListener('click', attemptAuth);
+        passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAuth(); });
 
-            // --- ТЕЛЕМЕТРИЯ ---
-            function updateTelemetry() {
-                const info = renderer.info;
-                telemetryHud.innerText = \`Полигоны: \${info.render.triangles} | Геометрии: \${info.memory.geometries} | Текстуры: \${info.memory.textures}\`;
-                console.log("=== PECHNIK HUB: АУДИТ ===");
-                console.log(\`Геометрий: \${info.memory.geometries}, Текстур: \${info.memory.textures}, Треугольников: \${info.render.triangles}\`);
-            }
+        function initApp() {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                // ============================================================
+                // 2. ИМПОРТЫ
+                // ============================================================
+                import * as THREE from 'three';
+                import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+                import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+                import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-            // --- ЗАГРУЗКА МОДЕЛИ ---
-            const loader = new GLTFLoader();
-            loader.load(
-                MODEL_URL,
-                (gltf) => {
-                    const model = gltf.scene;
-                    window.pechnikModel = model;
-                    const box = new THREE.Box3().setFromObject(model);
-                    const center = box.getCenter(new THREE.Vector3());
-                    model.position.sub(center);
-                    model.position.y += box.min.y * -1;
-                    const midY = (box.max.y - box.min.y) / 2;
-                    controls.target.set(0, midY, 0);
-                    scene.add(model);
-                    statusDisplay.style.display = 'none';
-                    hardSync();
-                    updateTelemetry();
-                },
-                (xhr) => {
-                    if (xhr.total > 0) {
-                        const progress = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusDisplay.innerText = \`⏳ ЗАГРУЗКА: \${progress}%\`;
-                    }
-                },
-                (error) => {
-                    console.error('Ошибка загрузки:', error);
-                    statusDisplay.innerText = '❌ ОШИБКА ЗАГРУЗКИ МОДЕЛИ\\nПроверьте путь или формат файла.';
-                    statusDisplay.style.color = '#ff1744';
-                }
-            );
+                // ============================================================
+                // 3. КОНФИГУРАЦИЯ (пути к модели и данным)
+                // ============================================================
+                const MODEL_URL = './test3d/Erker-770-test_export.glb';
+                const JSON_URL = './row_data.json';
+                const BACKGROUND_COLOR = 0x888888;
 
-            // --- АНИМАЦИЯ ---
-            function animate() {
-                requestAnimationFrame(animate);
-                controls.update();
-                renderer.render(scene, camera);
-            }
-            animate();
+                // ============================================================
+                // 4. ОПИСАНИЕ МАТЕРИАЛОВ (соответствует логике create_scenes_and_export.rb)
+                // ============================================================
+                const MATERIALS_CONFIG = [
+                    { id: 'palette_brick_facade',   label: 'Фасад',         color: '#4caf50', group: 'Кирпич' },
+                    { id: 'palette_brick_building', label: 'Забутовка',     color: '#ff5722', group: 'Кирпич' },
+                    { id: 'palette_brick_refractory', label: 'Шамот',       color: '#ffeb3b', group: 'Кирпич' },
+                    { id: 'palette_iron',           label: 'Литьё',         color: '#607d8b', group: 'Фурнитура' },
+                    { id: 'finish_table',           label: 'Столешница',    color: '#ff9800', group: 'Отделка' },
+                    { id: 'finish_misc',            label: 'Отделка (прочее)', color: '#795548', group: 'Отделка' }
+                ];
 
-            // --- РЕСАЙЗ ---
-            window.addEventListener('resize', () => {
-                const w = container.clientWidth;
-                const h = container.clientHeight;
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-                renderer.setSize(w, h);
-            });
+                // Дополнительные теги для материалов (как в скрипте)
+                const MATERIAL_ALIASES = {
+                    'lf': 'palette_brick_facade',
+                    'sp': 'palette_brick_building',
+                    'sh8': 'palette_brick_refractory',
+                    'шб-8': 'palette_brick_refractory',
+                    'шамот': 'palette_brick_refractory',
+                    'лицевой': 'palette_brick_facade',
+                    'строительный': 'palette_brick_building'
+                };
 
-            // --- UI СОБЫТИЯ ---
-            document.addEventListener('DOMContentLoaded', () => {
+                // ============================================================
+                // 5. DOM-ЭЛЕМЕНТЫ
+                // ============================================================
+                const container = document.getElementById('canvas-container');
+                const canvas = document.getElementById('pechnik-webgl-canvas');
+                const statusDisplay = document.getElementById('loader-status');
+                const telemetryHud = document.getElementById('telemetry-hud');
+
+                const panelRowNum = document.getElementById('panel-row-num');
+                const panelLf = document.getElementById('panel-lf');
+                const panelSp = document.getElementById('panel-sp');
+                const panelSh8 = document.getElementById('panel-sh8');
+                const panelCasting = document.getElementById('panel-casting');
+                const panelNote = document.getElementById('panel-note');
+                const totalLf = document.getElementById('total-lf');
+                const totalSp = document.getElementById('total-sp');
+                const totalSh8 = document.getElementById('total-sh8');
+                const totalWeight = document.getElementById('total-weight');
+
+                const layerGrid = document.getElementById('layer-grid-container');
+                const materialList = document.getElementById('material-list');
+
                 const slider = document.getElementById('layer-slider');
                 const counter = document.getElementById('layer-counter');
+                const btnAccum = document.getElementById('btn-accum');
+                const btnStrict = document.getElementById('btn-strict');
 
+                // ============================================================
+                // 6. СОСТОЯНИЕ
+                // ============================================================
+                let rowData = null;               // данные из JSON (row_data.json)
+                let currentLayer = 54;
+                let displayMode = 'ACCUMULATIVE'; // 'ACCUMULATIVE' или 'STRICT'
+                let isManualMode = false;         // true – управление чекбоксами слоёв
+                const rowVisibility = new Array(55).fill(true); // 1..54
+                const matState = {};
+                MATERIALS_CONFIG.forEach(m => matState[m.id] = true);
+
+                // ============================================================
+                // 7. ИНИЦИАЛИЗАЦИЯ THREE.JS
+                // ============================================================
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(BACKGROUND_COLOR);
+
+                const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(5, 5, 8);
+
+                const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.2;
+
+                const controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.08;
+                controls.maxPolarAngle = Math.PI / 2 - 0.01;
+                controls.minDistance = 1.5;
+                controls.maxDistance = 20;
+                controls.target.set(0, 0.5, 0);
+
+                // Освещение (с HDR окружением)
+                const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer)).texture;
+                scene.environment = envTexture;
+                pmremGenerator.dispose();
+
+                const ambient = new THREE.AmbientLight(0xffeedd, 0.5);
+                scene.add(ambient);
+
+                const dirLight = new THREE.DirectionalLight(0xffeedd, 1.5);
+                dirLight.position.set(5, 12, 8);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                const d = 8;
+                dirLight.shadow.camera.left = -d; dirLight.shadow.camera.right = d;
+                dirLight.shadow.camera.top = d; dirLight.shadow.camera.bottom = -d;
+                dirLight.shadow.camera.near = 1; dirLight.shadow.camera.far = 20;
+                scene.add(dirLight);
+
+                const backLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+                backLight.position.set(-3, 1, -5);
+                scene.add(backLight);
+
+                const bottomLight = new THREE.DirectionalLight(0x88aaff, 0.3);
+                bottomLight.position.set(0, -2, 0);
+                scene.add(bottomLight);
+
+                // ============================================================
+                // 8. ЗАГРУЗКА МОДЕЛИ
+                // ============================================================
+                const loader = new GLTFLoader();
+                loader.load(
+                    MODEL_URL,
+                    (gltf) => {
+                        const model = gltf.scene;
+                        window.pechnikModel = model;
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        model.position.sub(center);
+                        model.position.y += box.min.y * -1;
+                        const midY = (box.max.y - box.min.y) / 2;
+                        controls.target.set(0, midY, 0);
+                        scene.add(model);
+                        statusDisplay.style.display = 'none';
+                        // Применяем начальную видимость
+                        applyVisibility();
+                        updateTelemetry();
+                    },
+                    (xhr) => {
+                        if (xhr.total > 0) {
+                            const progress = Math.round((xhr.loaded / xhr.total) * 100);
+                            statusDisplay.innerText = \`⏳ ЗАГРУЗКА: \${progress}%\`;
+                        }
+                    },
+                    (error) => {
+                        console.error('Ошибка загрузки модели:', error);
+                        statusDisplay.innerText = '❌ ОШИБКА ЗАГРУЗКИ МОДЕЛИ\\nПроверьте путь или формат файла.';
+                        statusDisplay.style.color = '#ff1744';
+                    }
+                );
+
+                // ============================================================
+                // 9. ОСНОВНАЯ ФУНКЦИЯ ВИДИМОСТИ (соответствует логике скрипта)
+                // ============================================================
+                function applyVisibility() {
+                    if (!window.pechnikModel) return;
+
+                    // Если не ручной режим – вычисляем видимость из currentLayer и displayMode
+                    if (!isManualMode) {
+                        for (let i = 1; i <= 54; i++) {
+                            rowVisibility[i] = (displayMode === 'ACCUMULATIVE') ? (i <= currentLayer) : (i === currentLayer);
+                        }
+                        updateLayerCheckboxes();
+                    }
+
+                    // Проходим по всем объектам модели
+                    window.pechnikModel.traverse((obj) => {
+                        if (obj.isMesh) {
+                            // --- 1. Определяем номер ряда ---
+                            let rowNum = null;
+                            // Собираем имена самого объекта и его родителя (как в скрипте)
+                            const names = [obj.name, obj.parent ? obj.parent.name : ''].join(' ').toLowerCase();
+                            // Ищем шаблон: "row_01", "ряд_01", "r01" и т.п.
+                            const match = names.match(/(ряд|row|r)[_\s]*(\d+)/);
+                            if (match) {
+                                rowNum = parseInt(match[2], 10);
+                            }
+
+                            // --- 2. Определяем материал ---
+                            let matTag = null;
+                            // Сначала ищем точное совпадение с тегами из MATERIALS_CONFIG
+                            for (const m of MATERIALS_CONFIG) {
+                                if (names.includes(m.id.toLowerCase())) {
+                                    matTag = m.id;
+                                    break;
+                                }
+                            }
+                            // Если не нашли, ищем алиасы (LF, SP, SH8, шб-8, etc.)
+                            if (!matTag) {
+                                for (const [alias, tag] of Object.entries(MATERIAL_ALIASES)) {
+                                    if (names.includes(alias)) {
+                                        matTag = tag;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Если всё ещё нет, проверяем userData (на случай, если там есть теги)
+                            if (!matTag && obj.userData) {
+                                const userDataStr = JSON.stringify(obj.userData).toLowerCase();
+                                for (const m of MATERIALS_CONFIG) {
+                                    if (userDataStr.includes(m.id.toLowerCase())) {
+                                        matTag = m.id;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // --- 3. Применяем видимость по ряду и материалу ---
+                            let rowVisible = true;
+                            if (rowNum !== null && rowNum >= 1 && rowNum <= 54) {
+                                rowVisible = rowVisibility[rowNum] || false;
+                            }
+                            let matVisible = true;
+                            if (matTag && matState.hasOwnProperty(matTag)) {
+                                matVisible = matState[matTag];
+                            }
+                            obj.visible = rowVisible && matVisible;
+                        }
+                    });
+
+                    // Обновляем информационную панель и слайдер
+                    updateInfoPanel(currentLayer);
+                    updateSliderAndCounter();
+                    updateTelemetry();
+                }
+
+                // ============================================================
+                // 10. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+                // ============================================================
+                function updateLayerCheckboxes() {
+                    const labels = layerGrid.querySelectorAll('label');
+                    labels.forEach(label => {
+                        const cb = label.querySelector('input[type="checkbox"]');
+                        const row = parseInt(cb.dataset.row);
+                        cb.checked = rowVisibility[row] || false;
+                        label.classList.toggle('active-layer', cb.checked);
+                    });
+                }
+
+                function updateSliderAndCounter() {
+                    let maxVisible = 0;
+                    for (let i = 54; i >= 1; i--) {
+                        if (rowVisibility[i]) { maxVisible = i; break; }
+                    }
+                    if (maxVisible === 0) maxVisible = 1;
+                    slider.value = maxVisible;
+                    counter.innerText = \`РЯД: \${maxVisible} / 54\`;
+                }
+
+                function updateTelemetry() {
+                    const info = renderer.info;
+                    telemetryHud.innerText = \`Полигоны: \${info.render.triangles} | Геометрии: \${info.memory.geometries} | Текстуры: \${info.memory.textures}\`;
+                }
+
+                // ============================================================
+                // 11. ЗАГРУЗКА ДАННЫХ ИЗ JSON
+                // ============================================================
+                async function loadRowData() {
+                    try {
+                        const resp = await fetch(JSON_URL);
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        rowData = await resp.json();
+                        console.log('✅ Данные загружены:', rowData);
+                        if (rowData.totals) {
+                            totalLf.textContent = rowData.totals.lf || 0;
+                            totalSp.textContent = rowData.totals.sp || 0;
+                            totalSh8.textContent = rowData.totals.sh8 || 0;
+                            totalWeight.textContent = (rowData.totals.weight || 0) + ' т';
+                        }
+                        updateInfoPanel(currentLayer);
+                    } catch (e) {
+                        console.warn('⚠️ Не удалось загрузить JSON:', e);
+                        panelNote.textContent = 'Данные не загружены';
+                    }
+                }
+
+                function updateInfoPanel(rowNum) {
+                    panelRowNum.textContent = rowNum;
+                    if (!rowData || !rowData.rows) {
+                        panelLf.textContent = '?';
+                        panelSp.textContent = '?';
+                        panelSh8.textContent = '?';
+                        panelCasting.innerHTML = '<span style="color:#888;">нет данных</span>';
+                        panelNote.textContent = 'Загрузите данные';
+                        return;
+                    }
+                    const row = rowData.rows.find(r => r.number === rowNum);
+                    if (!row) {
+                        panelLf.textContent = '0';
+                        panelSp.textContent = '0';
+                        panelSh8.textContent = '0';
+                        panelCasting.innerHTML = '<span style="color:#888;">—</span>';
+                        panelNote.textContent = 'Нет данных для этого ряда';
+                        return;
+                    }
+                    panelLf.textContent = row.lf || 0;
+                    panelSp.textContent = row.sp || 0;
+                    panelSh8.textContent = row.sh8 || 0;
+                    if (row.casting && row.casting.length > 0) {
+                        panelCasting.innerHTML = row.casting.map(item => \`<span class="casting-tag">\${item}</span>\`).join('');
+                    } else {
+                        panelCasting.innerHTML = '<span style="color:#888;">Нет</span>';
+                    }
+                    panelNote.textContent = row.note && row.note.trim() !== '' ? row.note : '📝 Заметок нет';
+                }
+
+                // ============================================================
+                // 12. ПОСТРОЕНИЕ UI (СЛОИ И МАТЕРИАЛЫ)
+                // ============================================================
+
+                // --- Слои (чекбоксы) ---
+                function buildLayerUI() {
+                    layerGrid.innerHTML = '';
+                    for (let i = 1; i <= 54; i++) {
+                        const label = document.createElement('label');
+                        label.dataset.row = i;
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = true;
+                        cb.dataset.row = i;
+                        const span = document.createElement('span');
+                        span.textContent = i;
+                        label.appendChild(cb);
+                        label.appendChild(span);
+                        layerGrid.appendChild(label);
+
+                        cb.addEventListener('change', function(e) {
+                            const row = parseInt(this.dataset.row);
+                            rowVisibility[row] = this.checked;
+                            isManualMode = true;
+                            const label = this.parentElement;
+                            label.classList.toggle('active-layer', this.checked);
+                            applyVisibility();
+                        });
+                    }
+                }
+                buildLayerUI();
+
+                // --- Материалы ---
+                function buildMaterialUI() {
+                    materialList.innerHTML = '';
+                    const groups = {};
+                    MATERIALS_CONFIG.forEach(m => {
+                        if (!groups[m.group]) groups[m.group] = [];
+                        groups[m.group].push(m);
+                    });
+                    for (const [groupName, items] of Object.entries(groups)) {
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'material-group';
+                        const title = document.createElement('div');
+                        title.className = 'group-title';
+                        title.textContent = groupName;
+                        groupDiv.appendChild(title);
+                        items.forEach(m => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'material-item active';
+                            itemDiv.dataset.matId = m.id;
+                            const dot = document.createElement('span');
+                            dot.className = 'color-dot';
+                            dot.style.backgroundColor = m.color;
+                            const label = document.createElement('span');
+                            label.className = 'mat-label';
+                            label.textContent = m.label;
+                            const count = document.createElement('span');
+                            count.className = 'mat-count';
+                            count.textContent = '●'; // можно заменить на число
+                            const cb = document.createElement('input');
+                            cb.type = 'checkbox';
+                            cb.checked = true;
+                            cb.dataset.matId = m.id;
+
+                            itemDiv.addEventListener('click', function(e) {
+                                if (e.target.tagName === 'INPUT') return;
+                                const cb = this.querySelector('input[type="checkbox"]');
+                                cb.checked = !cb.checked;
+                                cb.dispatchEvent(new Event('change'));
+                            });
+                            cb.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                const id = this.dataset.matId;
+                                matState[id] = this.checked;
+                                const parent = this.closest('.material-item');
+                                parent.classList.toggle('active', this.checked);
+                                applyVisibility();
+                            });
+                            itemDiv.appendChild(dot);
+                            itemDiv.appendChild(label);
+                            itemDiv.appendChild(count);
+                            itemDiv.appendChild(cb);
+                            groupDiv.appendChild(itemDiv);
+                        });
+                        materialList.appendChild(groupDiv);
+                    }
+                }
+                buildMaterialUI();
+
+                // ============================================================
+                // 13. СОБЫТИЯ УПРАВЛЕНИЯ
+                // ============================================================
+
+                // Слайдер
                 slider.addEventListener('input', (e) => {
+                    if (isManualMode) {
+                        isManualMode = false;
+                    }
                     currentLayer = parseInt(e.target.value);
                     counter.innerText = \`РЯД: \${currentLayer} / 54\`;
-                    hardSync();
+                    applyVisibility();
+                    updateInfoPanel(currentLayer);
                 });
 
-                document.getElementById('btn-accum').addEventListener('click', function() {
+                // Кнопки режимов
+                btnAccum.addEventListener('click', function() {
+                    isManualMode = false;
                     this.classList.add('active');
-                    document.getElementById('btn-strict').classList.remove('active');
+                    btnStrict.classList.remove('active');
                     displayMode = 'ACCUMULATIVE';
-                    hardSync();
+                    applyVisibility();
+                    updateInfoPanel(currentLayer);
                 });
-                document.getElementById('btn-strict').addEventListener('click', function() {
+                btnStrict.addEventListener('click', function() {
+                    isManualMode = false;
                     this.classList.add('active');
-                    document.getElementById('btn-accum').classList.remove('active');
+                    btnAccum.classList.remove('active');
                     displayMode = 'STRICT';
-                    hardSync();
+                    applyVisibility();
+                    updateInfoPanel(currentLayer);
                 });
 
-                document.querySelectorAll('.material-grid .mat-btn').forEach(btn => {
+                // Инструменты слоёв
+                document.getElementById('layer-select-all').addEventListener('click', () => {
+                    isManualMode = true;
+                    for (let i = 1; i <= 54; i++) rowVisibility[i] = true;
+                    applyVisibility();
+                });
+                document.getElementById('layer-deselect-all').addEventListener('click', () => {
+                    isManualMode = true;
+                    for (let i = 1; i <= 54; i++) rowVisibility[i] = false;
+                    rowVisibility[1] = true; // всегда оставляем хотя бы 1
+                    applyVisibility();
+                });
+                document.getElementById('layer-invert').addEventListener('click', () => {
+                    isManualMode = true;
+                    for (let i = 1; i <= 54; i++) rowVisibility[i] = !rowVisibility[i];
+                    if (!rowVisibility.some(v => v)) rowVisibility[1] = true;
+                    applyVisibility();
+                });
+                document.getElementById('layer-even').addEventListener('click', () => {
+                    isManualMode = true;
+                    for (let i = 1; i <= 54; i++) rowVisibility[i] = (i % 2 === 0);
+                    if (!rowVisibility.some(v => v)) rowVisibility[2] = true;
+                    applyVisibility();
+                });
+                document.getElementById('layer-odd').addEventListener('click', () => {
+                    isManualMode = true;
+                    for (let i = 1; i <= 54; i++) rowVisibility[i] = (i % 2 === 1);
+                    if (!rowVisibility.some(v => v)) rowVisibility[1] = true;
+                    applyVisibility();
+                });
+
+                // Инструменты материалов
+                document.getElementById('mat-select-all').addEventListener('click', () => {
+                    MATERIALS_CONFIG.forEach(m => matState[m.id] = true);
+                    document.querySelectorAll('#material-list .material-item').forEach(el => {
+                        const cb = el.querySelector('input[type="checkbox"]');
+                        cb.checked = true;
+                        el.classList.add('active');
+                    });
+                    applyVisibility();
+                });
+                document.getElementById('mat-deselect-all').addEventListener('click', () => {
+                    MATERIALS_CONFIG.forEach(m => matState[m.id] = false);
+                    document.querySelectorAll('#material-list .material-item').forEach(el => {
+                        const cb = el.querySelector('input[type="checkbox"]');
+                        cb.checked = false;
+                        el.classList.remove('active');
+                    });
+                    applyVisibility();
+                });
+
+                // Переключение вкладок
+                document.querySelectorAll('.panel-tabs button').forEach(btn => {
                     btn.addEventListener('click', function() {
-                        this.classList.toggle('active');
-                        const tag = this.getAttribute('data-tag');
-                        activeMaterials[tag] = this.classList.contains('active');
-                        hardSync();
+                        document.querySelectorAll('.panel-tabs button').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        const tabId = this.dataset.tab;
+                        document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+                        document.getElementById(tabId).classList.add('active');
                     });
                 });
-            });
 
-            // --- ОТЛАДКА ---
-            window.__pechnik = { scene, camera, renderer, controls, hardSync, updateTelemetry };
-            console.log('✅ Печной плеер (новая страница) инициализирован.');
-        `;
-        document.body.appendChild(script);
-    }
+                // ============================================================
+                // 14. АНИМАЦИЯ И РЕСАЙЗ
+                // ============================================================
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                });
+
+                // ============================================================
+                // 15. СТАРТ
+                // ============================================================
+                loadRowData();
+                window.__pechnik = { scene, camera, renderer, controls, applyVisibility, rowVisibility, matState };
+                console.log('✅ Плеер инициализирован (логика соответствует create_scenes_and_export.rb).');
+            `;
+            document.body.appendChild(script);
+        }
+    })();
 </script>
 </body>
 </html>
