@@ -187,7 +187,7 @@
   // Загрузка инженерного слепка модели
   const loader = new THREE.GLTFLoader();
   loader.load(
-    'https://pechnik-novosib.ru',
+    'https://pechnik-novosib.ru/public_html/test3d',
     function(gltf) {
       const model = gltf.scene;
       const box = new THREE.Box3().setFromObject(model);
