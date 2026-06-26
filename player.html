@@ -13,7 +13,6 @@
     }
     </script>
     <style>
-        /* ===== Стили (без изменений, те же что и в предыдущей версии) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
 
@@ -379,9 +378,6 @@
 </script>
 
 <script>
-    // ============================================================
-    // 1. АВТОРИЗАЦИЯ (без изменений)
-    // ============================================================
     (function() {
         const PASSWORD = 'pechnik2026';
         const overlay = document.getElementById('auth-overlay');
@@ -416,34 +412,27 @@
             const script = document.createElement('script');
             script.type = 'module';
             script.textContent = `
-                // ============================================================
-                // 2. ИМПОРТЫ
-                // ============================================================
                 import * as THREE from 'three';
                 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
                 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
                 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-                // ============================================================
-                // 3. КОНФИГУРАЦИЯ (пути к модели и данным)
-                // ============================================================
+                // ========== КОНФИГУРАЦИЯ ==========
                 const MODEL_URL = './test3d/Erker-770-test_export.glb';
-                const JSON_URL = './row_data.json';
                 const BACKGROUND_COLOR = 0x888888;
 
-                // ============================================================
-                // 4. ОПИСАНИЕ МАТЕРИАЛОВ (соответствует логике create_scenes_and_export.rb)
-                // ============================================================
+                // ========== ОПИСАНИЕ МАТЕРИАЛОВ (с "unknown") ==========
                 const MATERIALS_CONFIG = [
                     { id: 'palette_brick_facade',   label: 'Фасад',         color: '#4caf50', group: 'Кирпич' },
                     { id: 'palette_brick_building', label: 'Забутовка',     color: '#ff5722', group: 'Кирпич' },
                     { id: 'palette_brick_refractory', label: 'Шамот',       color: '#ffeb3b', group: 'Кирпич' },
                     { id: 'palette_iron',           label: 'Литьё',         color: '#607d8b', group: 'Фурнитура' },
                     { id: 'finish_table',           label: 'Столешница',    color: '#ff9800', group: 'Отделка' },
-                    { id: 'finish_misc',            label: 'Отделка (прочее)', color: '#795548', group: 'Отделка' }
+                    { id: 'finish_misc',            label: 'Отделка (прочее)', color: '#795548', group: 'Отделка' },
+                    { id: 'unknown',                label: 'Не классифицировано', color: '#999999', group: 'Прочее' }
                 ];
 
-                // Дополнительные теги для материалов (как в скрипте)
+                // ========== АЛИАСЫ ==========
                 const MATERIAL_ALIASES = {
                     'lf': 'palette_brick_facade',
                     'sp': 'palette_brick_building',
@@ -451,12 +440,29 @@
                     'шб-8': 'palette_brick_refractory',
                     'шамот': 'palette_brick_refractory',
                     'лицевой': 'palette_brick_facade',
-                    'строительный': 'palette_brick_building'
+                    'строительный': 'palette_brick_building',
+                    'дверц': 'palette_iron',
+                    'дверка': 'palette_iron',
+                    'колосник': 'palette_iron',
+                    'шибер': 'palette_iron',
+                    'плита': 'palette_iron',
+                    'мойка': 'palette_iron',
+                    'подвес': 'palette_iron',
+                    'уголок': 'palette_iron',
+                    'тоннель': 'palette_iron',
+                    'шпилька': 'palette_iron',
+                    'гайка': 'palette_iron',
+                    'шайба': 'palette_iron',
+                    'керамогранит': 'finish_table',
+                    'столешниц': 'finish_table',
+                    'базальтов': 'finish_misc',
+                    'труб': 'finish_misc',
+                    'внешняя': 'finish_misc',
+                    'оболочк': 'finish_misc',
+                    'различие': 'finish_misc'
                 };
 
-                // ============================================================
-                // 5. DOM-ЭЛЕМЕНТЫ
-                // ============================================================
+                // ========== DOM ==========
                 const container = document.getElementById('canvas-container');
                 const canvas = document.getElementById('pechnik-webgl-canvas');
                 const statusDisplay = document.getElementById('loader-status');
@@ -481,20 +487,18 @@
                 const btnAccum = document.getElementById('btn-accum');
                 const btnStrict = document.getElementById('btn-strict');
 
-                // ============================================================
-                // 6. СОСТОЯНИЕ
-                // ============================================================
-                let rowData = null;               // данные из JSON (row_data.json)
+                // ========== СОСТОЯНИЕ ==========
+                let rowData = null;
                 let currentLayer = 54;
-                let displayMode = 'ACCUMULATIVE'; // 'ACCUMULATIVE' или 'STRICT'
-                let isManualMode = false;         // true – управление чекбоксами слоёв
-                const rowVisibility = new Array(55).fill(true); // 1..54
+                let displayMode = 'ACCUMULATIVE';
+                let isManualMode = false;
+                const rowVisibility = new Array(55).fill(true);
                 const matState = {};
                 MATERIALS_CONFIG.forEach(m => matState[m.id] = true);
 
-                // ============================================================
-                // 7. ИНИЦИАЛИЗАЦИЯ THREE.JS
-                // ============================================================
+                let meshCache = [];
+
+                // ========== THREE.JS ==========
                 const scene = new THREE.Scene();
                 scene.background = new THREE.Color(BACKGROUND_COLOR);
 
@@ -517,7 +521,7 @@
                 controls.maxDistance = 20;
                 controls.target.set(0, 0.5, 0);
 
-                // Освещение (с HDR окружением)
+                // Освещение
                 const pmremGenerator = new THREE.PMREMGenerator(renderer);
                 const envTexture = pmremGenerator.fromScene(new RoomEnvironment(renderer)).texture;
                 scene.environment = envTexture;
@@ -545,9 +549,7 @@
                 bottomLight.position.set(0, -2, 0);
                 scene.add(bottomLight);
 
-                // ============================================================
-                // 8. ЗАГРУЗКА МОДЕЛИ
-                // ============================================================
+                // ========== ЗАГРУЗКА МОДЕЛИ ==========
                 const loader = new GLTFLoader();
                 loader.load(
                     MODEL_URL,
@@ -562,7 +564,8 @@
                         controls.target.set(0, midY, 0);
                         scene.add(model);
                         statusDisplay.style.display = 'none';
-                        // Применяем начальную видимость
+
+                        buildMeshCache();
                         applyVisibility();
                         updateTelemetry();
                     },
@@ -579,13 +582,51 @@
                     }
                 );
 
-                // ============================================================
-                // 9. ОСНОВНАЯ ФУНКЦИЯ ВИДИМОСТИ (соответствует логике скрипта)
-                // ============================================================
-                function applyVisibility() {
+                // ========== КЭШ ОБЪЕКТОВ ==========
+                function buildMeshCache() {
+                    meshCache = [];
                     if (!window.pechnikModel) return;
+                    window.pechnikModel.traverse((obj) => {
+                        if (obj.isMesh) {
+                            const names = [obj.name, obj.parent ? obj.parent.name : ''].join(' ').toLowerCase();
+                            const match = names.match(/(ряд|row|r)[_\\s]*(\\d+)/);
+                            let rowNum = match ? parseInt(match[2]) : null;
+                            let matTag = null;
+                            for (const [alias, tag] of Object.entries(MATERIAL_ALIASES)) {
+                                if (names.includes(alias)) {
+                                    matTag = tag;
+                                    break;
+                                }
+                            }
+                            if (!matTag) {
+                                for (const m of MATERIALS_CONFIG) {
+                                    if (names.includes(m.id.toLowerCase())) {
+                                        matTag = m.id;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Если тег не определён, присваиваем 'unknown'
+                            if (!matTag) matTag = 'unknown';
+                            meshCache.push({ mesh: obj, rowNum, matTag });
+                        }
+                    });
+                    console.log(\`✅ Кэш построен: \${meshCache.length} объектов\`);
+                    const matStats = {};
+                    meshCache.forEach(entry => {
+                        const tag = entry.matTag || 'unknown';
+                        matStats[tag] = (matStats[tag] || 0) + 1;
+                    });
+                    console.log('📊 Статистика материалов:', matStats);
+                }
 
-                    // Если не ручной режим – вычисляем видимость из currentLayer и displayMode
+                // ========== ОСНОВНАЯ ФУНКЦИЯ ВИДИМОСТИ ==========
+                function applyVisibility() {
+                    if (!window.pechnikModel || meshCache.length === 0) {
+                        console.warn('⚠️ Нет объектов для отображения. Кэш пуст.');
+                        return;
+                    }
+
                     if (!isManualMode) {
                         for (let i = 1; i <= 54; i++) {
                             rowVisibility[i] = (displayMode === 'ACCUMULATIVE') ? (i <= currentLayer) : (i === currentLayer);
@@ -593,70 +634,35 @@
                         updateLayerCheckboxes();
                     }
 
-                    // Проходим по всем объектам модели
-                    window.pechnikModel.traverse((obj) => {
-                        if (obj.isMesh) {
-                            // --- 1. Определяем номер ряда ---
-                            let rowNum = null;
-                            // Собираем имена самого объекта и его родителя (как в скрипте)
-                            const names = [obj.name, obj.parent ? obj.parent.name : ''].join(' ').toLowerCase();
-                            // Ищем шаблон: "row_01", "ряд_01", "r01" и т.п.
-                            const match = names.match(/(ряд|row|r)[_\s]*(\d+)/);
-                            if (match) {
-                                rowNum = parseInt(match[2], 10);
-                            }
-
-                            // --- 2. Определяем материал ---
-                            let matTag = null;
-                            // Сначала ищем точное совпадение с тегами из MATERIALS_CONFIG
-                            for (const m of MATERIALS_CONFIG) {
-                                if (names.includes(m.id.toLowerCase())) {
-                                    matTag = m.id;
-                                    break;
-                                }
-                            }
-                            // Если не нашли, ищем алиасы (LF, SP, SH8, шб-8, etc.)
-                            if (!matTag) {
-                                for (const [alias, tag] of Object.entries(MATERIAL_ALIASES)) {
-                                    if (names.includes(alias)) {
-                                        matTag = tag;
-                                        break;
-                                    }
-                                }
-                            }
-                            // Если всё ещё нет, проверяем userData (на случай, если там есть теги)
-                            if (!matTag && obj.userData) {
-                                const userDataStr = JSON.stringify(obj.userData).toLowerCase();
-                                for (const m of MATERIALS_CONFIG) {
-                                    if (userDataStr.includes(m.id.toLowerCase())) {
-                                        matTag = m.id;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // --- 3. Применяем видимость по ряду и материалу ---
-                            let rowVisible = true;
-                            if (rowNum !== null && rowNum >= 1 && rowNum <= 54) {
-                                rowVisible = rowVisibility[rowNum] || false;
-                            }
-                            let matVisible = true;
-                            if (matTag && matState.hasOwnProperty(matTag)) {
-                                matVisible = matState[matTag];
-                            }
-                            obj.visible = rowVisible && matVisible;
+                    let visibleCount = 0, hiddenCount = 0;
+                    for (const entry of meshCache) {
+                        const { mesh, rowNum, matTag } = entry;
+                        let rowVisible = true;
+                        if (rowNum !== null && rowNum >= 1 && rowNum <= 54) {
+                            rowVisible = rowVisibility[rowNum] || false;
                         }
-                    });
+                        let matVisible = true;
+                        if (matTag && matState.hasOwnProperty(matTag)) {
+                            matVisible = matState[matTag];
+                        } else {
+                            // Если тег не найден в matState, используем 'unknown'
+                            matVisible = matState['unknown'] !== undefined ? matState['unknown'] : true;
+                        }
+                        const shouldBeVisible = rowVisible && matVisible;
+                        if (mesh.visible !== shouldBeVisible) {
+                            mesh.visible = shouldBeVisible;
+                            if (shouldBeVisible) visibleCount++; else hiddenCount++;
+                        }
+                    }
 
-                    // Обновляем информационную панель и слайдер
+                    console.log(\`✅ Видимость: видимых \${visibleCount}, скрытых \${hiddenCount}, ряд \${currentLayer}, режим \${displayMode}\`);
+
                     updateInfoPanel(currentLayer);
                     updateSliderAndCounter();
                     updateTelemetry();
                 }
 
-                // ============================================================
-                // 10. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-                // ============================================================
+                // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
                 function updateLayerCheckboxes() {
                     const labels = layerGrid.querySelectorAll('label');
                     labels.forEach(label => {
@@ -682,26 +688,49 @@
                     telemetryHud.innerText = \`Полигоны: \${info.render.triangles} | Геометрии: \${info.memory.geometries} | Текстуры: \${info.memory.textures}\`;
                 }
 
-                // ============================================================
-                // 11. ЗАГРУЗКА ДАННЫХ ИЗ JSON
-                // ============================================================
-                async function loadRowData() {
-                    try {
-                        const resp = await fetch(JSON_URL);
-                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                        rowData = await resp.json();
-                        console.log('✅ Данные загружены:', rowData);
-                        if (rowData.totals) {
-                            totalLf.textContent = rowData.totals.lf || 0;
-                            totalSp.textContent = rowData.totals.sp || 0;
-                            totalSh8.textContent = rowData.totals.sh8 || 0;
-                            totalWeight.textContent = (rowData.totals.weight || 0) + ' т';
-                        }
-                        updateInfoPanel(currentLayer);
-                    } catch (e) {
-                        console.warn('⚠️ Не удалось загрузить JSON:', e);
-                        panelNote.textContent = 'Данные не загружены';
-                    }
+                // ========== ДАННЫЕ ==========
+                const FALLBACK_DATA = {
+                    project_code: "У-3240-НМ",
+                    model_title: "Erker-770-test_export",
+                    total_rows: 54,
+                    rows: Array.from({length: 54}, (_, i) => ({
+                        number: i + 1,
+                        lf: 0,
+                        sp: 0,
+                        sh8: 0,
+                        casting: [],
+                        note: ""
+                    })),
+                    totals: { lf: 0, sp: 0, sh8: 0, finish_table: 0, weight: 0 }
+                };
+
+                function loadRowData() {
+                    rowData = FALLBACK_DATA;
+                    updateInfoPanel(currentLayer);
+                    updateTotals();
+                    fetch('./row_data.json')
+                        .then(resp => {
+                            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                            return resp.json();
+                        })
+                        .then(data => {
+                            rowData = data;
+                            console.log('✅ JSON загружен:', data);
+                            updateTotals();
+                            updateInfoPanel(currentLayer);
+                        })
+                        .catch(e => {
+                            console.warn('⚠️ JSON не загружен, используем fallback:', e);
+                            panelNote.textContent = '📋 Данные встроенные (JSON не найден)';
+                        });
+                }
+
+                function updateTotals() {
+                    if (!rowData || !rowData.totals) return;
+                    totalLf.textContent = rowData.totals.lf || 0;
+                    totalSp.textContent = rowData.totals.sp || 0;
+                    totalSh8.textContent = rowData.totals.sh8 || 0;
+                    totalWeight.textContent = (rowData.totals.weight || 0) + ' т';
                 }
 
                 function updateInfoPanel(rowNum) {
@@ -711,7 +740,6 @@
                         panelSp.textContent = '?';
                         panelSh8.textContent = '?';
                         panelCasting.innerHTML = '<span style="color:#888;">нет данных</span>';
-                        panelNote.textContent = 'Загрузите данные';
                         return;
                     }
                     const row = rowData.rows.find(r => r.number === rowNum);
@@ -720,7 +748,6 @@
                         panelSp.textContent = '0';
                         panelSh8.textContent = '0';
                         panelCasting.innerHTML = '<span style="color:#888;">—</span>';
-                        panelNote.textContent = 'Нет данных для этого ряда';
                         return;
                     }
                     panelLf.textContent = row.lf || 0;
@@ -734,11 +761,8 @@
                     panelNote.textContent = row.note && row.note.trim() !== '' ? row.note : '📝 Заметок нет';
                 }
 
-                // ============================================================
-                // 12. ПОСТРОЕНИЕ UI (СЛОИ И МАТЕРИАЛЫ)
-                // ============================================================
+                // ========== ПОСТРОЕНИЕ UI ==========
 
-                // --- Слои (чекбоксы) ---
                 function buildLayerUI() {
                     layerGrid.innerHTML = '';
                     for (let i = 1; i <= 54; i++) {
@@ -758,15 +782,13 @@
                             const row = parseInt(this.dataset.row);
                             rowVisibility[row] = this.checked;
                             isManualMode = true;
-                            const label = this.parentElement;
-                            label.classList.toggle('active-layer', this.checked);
+                            this.parentElement.classList.toggle('active-layer', this.checked);
                             applyVisibility();
                         });
                     }
                 }
                 buildLayerUI();
 
-                // --- Материалы ---
                 function buildMaterialUI() {
                     materialList.innerHTML = '';
                     const groups = {};
@@ -793,7 +815,7 @@
                             label.textContent = m.label;
                             const count = document.createElement('span');
                             count.className = 'mat-count';
-                            count.textContent = '●'; // можно заменить на число
+                            count.textContent = '●';
                             const cb = document.createElement('input');
                             cb.type = 'checkbox';
                             cb.checked = true;
@@ -809,8 +831,7 @@
                                 e.stopPropagation();
                                 const id = this.dataset.matId;
                                 matState[id] = this.checked;
-                                const parent = this.closest('.material-item');
-                                parent.classList.toggle('active', this.checked);
+                                this.closest('.material-item').classList.toggle('active', this.checked);
                                 applyVisibility();
                             });
                             itemDiv.appendChild(dot);
@@ -824,22 +845,16 @@
                 }
                 buildMaterialUI();
 
-                // ============================================================
-                // 13. СОБЫТИЯ УПРАВЛЕНИЯ
-                // ============================================================
+                // ========== СОБЫТИЯ ==========
 
-                // Слайдер
                 slider.addEventListener('input', (e) => {
-                    if (isManualMode) {
-                        isManualMode = false;
-                    }
+                    if (isManualMode) isManualMode = false;
                     currentLayer = parseInt(e.target.value);
                     counter.innerText = \`РЯД: \${currentLayer} / 54\`;
                     applyVisibility();
                     updateInfoPanel(currentLayer);
                 });
 
-                // Кнопки режимов
                 btnAccum.addEventListener('click', function() {
                     isManualMode = false;
                     this.classList.add('active');
@@ -857,43 +872,45 @@
                     updateInfoPanel(currentLayer);
                 });
 
-                // Инструменты слоёв
                 document.getElementById('layer-select-all').addEventListener('click', () => {
                     isManualMode = true;
                     for (let i = 1; i <= 54; i++) rowVisibility[i] = true;
+                    updateLayerCheckboxes();
                     applyVisibility();
                 });
                 document.getElementById('layer-deselect-all').addEventListener('click', () => {
                     isManualMode = true;
                     for (let i = 1; i <= 54; i++) rowVisibility[i] = false;
-                    rowVisibility[1] = true; // всегда оставляем хотя бы 1
+                    rowVisibility[1] = true;
+                    updateLayerCheckboxes();
                     applyVisibility();
                 });
                 document.getElementById('layer-invert').addEventListener('click', () => {
                     isManualMode = true;
                     for (let i = 1; i <= 54; i++) rowVisibility[i] = !rowVisibility[i];
                     if (!rowVisibility.some(v => v)) rowVisibility[1] = true;
+                    updateLayerCheckboxes();
                     applyVisibility();
                 });
                 document.getElementById('layer-even').addEventListener('click', () => {
                     isManualMode = true;
                     for (let i = 1; i <= 54; i++) rowVisibility[i] = (i % 2 === 0);
                     if (!rowVisibility.some(v => v)) rowVisibility[2] = true;
+                    updateLayerCheckboxes();
                     applyVisibility();
                 });
                 document.getElementById('layer-odd').addEventListener('click', () => {
                     isManualMode = true;
                     for (let i = 1; i <= 54; i++) rowVisibility[i] = (i % 2 === 1);
                     if (!rowVisibility.some(v => v)) rowVisibility[1] = true;
+                    updateLayerCheckboxes();
                     applyVisibility();
                 });
 
-                // Инструменты материалов
                 document.getElementById('mat-select-all').addEventListener('click', () => {
                     MATERIALS_CONFIG.forEach(m => matState[m.id] = true);
                     document.querySelectorAll('#material-list .material-item').forEach(el => {
-                        const cb = el.querySelector('input[type="checkbox"]');
-                        cb.checked = true;
+                        el.querySelector('input[type="checkbox"]').checked = true;
                         el.classList.add('active');
                     });
                     applyVisibility();
@@ -901,27 +918,22 @@
                 document.getElementById('mat-deselect-all').addEventListener('click', () => {
                     MATERIALS_CONFIG.forEach(m => matState[m.id] = false);
                     document.querySelectorAll('#material-list .material-item').forEach(el => {
-                        const cb = el.querySelector('input[type="checkbox"]');
-                        cb.checked = false;
+                        el.querySelector('input[type="checkbox"]').checked = false;
                         el.classList.remove('active');
                     });
                     applyVisibility();
                 });
 
-                // Переключение вкладок
                 document.querySelectorAll('.panel-tabs button').forEach(btn => {
                     btn.addEventListener('click', function() {
                         document.querySelectorAll('.panel-tabs button').forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
-                        const tabId = this.dataset.tab;
                         document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
-                        document.getElementById(tabId).classList.add('active');
+                        document.getElementById(this.dataset.tab).classList.add('active');
                     });
                 });
 
-                // ============================================================
-                // 14. АНИМАЦИЯ И РЕСАЙЗ
-                // ============================================================
+                // ========== АНИМАЦИЯ ==========
                 function animate() {
                     requestAnimationFrame(animate);
                     controls.update();
@@ -937,12 +949,10 @@
                     renderer.setSize(w, h);
                 });
 
-                // ============================================================
-                // 15. СТАРТ
-                // ============================================================
+                // ========== СТАРТ ==========
                 loadRowData();
-                window.__pechnik = { scene, camera, renderer, controls, applyVisibility, rowVisibility, matState };
-                console.log('✅ Плеер инициализирован (логика соответствует create_scenes_and_export.rb).');
+                window.__pechnik = { scene, camera, renderer, controls, applyVisibility, rowVisibility, matState, meshCache };
+                console.log('✅ Плеер инициализирован (с unknown-тегом)');
             `;
             document.body.appendChild(script);
         }
