@@ -2,10 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Печь: Визуализатор</title>
+    <title>3D Player — Печь</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+    </style>
     
-    <!-- Подключаем Three.js и GLTFLoader -->
+    <!-- Import Map: говорит браузеру, что "three" и "three/addons" — это ссылки на CDN -->
     <script type="importmap">
         {
             "imports": {
@@ -14,456 +17,95 @@
             }
         }
     </script>
-
-    <style>
-        /* --- Базовые настройки страницы --- */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            text-align: center;
-        }
-
-        /* --- Стили формы авторизации --- */
-        .auth-form {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .auth-form h2 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-
-        .auth-form input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            margin: 15px 0;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .auth-form .main-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .auth-form .main-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .alert {
-            color: #dc3545;
-            margin-top: 10px;
-            display: none;
-            font-weight: bold;
-        }
-
-        /* --- Стили экрана загрузки (Лоадер) --- */
-        .loader {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 15px;
-        }
-
-        .progress {
-            height: 100%;
-            background-color: #007bff;
-            width: 0%;
-            transition: width 0.2s ease-out;
-        }
-
-        /* --- Стили панели управления --- */
-        .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .control-group {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .view-options {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button.control-btn, button.view-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-
-        button.control-btn {
-            background-color: #f8f9fa;
-            color: #495057;
-            border: 1px solid #dee2e6;
-        }
-
-        button.view-btn {
-            background-color: #f8f9fa;
-            color: #495057;
-            border: 1px solid #dee2e6;
-        }
-
-        button.active {
-            background-color: #007bff !important;
-            color: white !important;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
-        }
-
-        /* Адаптивность для мобильных устройств */
-        @media (max-width: 600px) {
-            .control-group, .view-options {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            button.control-btn, button.view-btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-    </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <!-- Секция авторизации -->
-        <div id="auth-section" class="auth-form">
-            <h2>Доступ к проекту</h2>
-            <p>Введите пароль для запуска 3D-визуализации</p>
-            <input type="password" id="password" placeholder="Пароль">
-            <button class="main-btn" onclick="checkPassword()">Войти</button>
-            <div id="error-message" class="alert">Неверный пароль!</div>
-        </div>
+<script type="module">
+    // Теперь эти импорты будут работать, так как мы настроили importmap выше
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-        <!-- Секция загрузки -->
-        <div id="loading-container" class="loader" style="display: none;">
-            <h3>Загрузка системы визуализации...</h3>
-            <p id="webgl-status">WebGL: Инициализация контекста...</p>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-        </div>
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+    const hdrPath = 'park.hdr';          // Твой локальный файл (должен лежать рядом с html)
+    const modelPath = 'model/pech.glb'; // Путь к модели
+    // -------------------------------
 
-        <!-- Панель управления (появляется после входа) -->
-        <div id="control-panel" class="controls" style="display: none;">
-            <h3>Управление видом</h3>
-            <div class="control-group">
-                <button class="control-btn" onclick="toggleAssembly()">Режим сборки</button>
-                <button class="control-btn" onclick="toggleXRay()">Рентген-режим</button>
-            </div>
-            <div class="view-options">
-                <button class="view-btn active" onclick="toggleView('facade')">Фасад</button>
-                <button class="view-btn" onclick="toggleView('zabutovka')">Забутовка</button>
-                <button class="view-btn" onclick="toggleView('shamot')">Шамот</button>
-                <button class="view-btn" onclick="toggleView('casting')">Литье</button>
-                <button class="view-btn" onclick="toggleView('countertop')">Столешница</button>
-                <button class="view-btn" onclick="toggleView('finishing')">Отделка</button>
-            </div>
-            <div style="margin-top: 20px; font-weight: bold;">
-                Ряд: <span id="current-row">0</span> из <span id="total-rows">54</span>
-            </div>
-        </div>
+    let scene, camera, renderer, controls, model;
 
-        <!-- Контейнер для 3D сцены -->
-        <div id="scene-container" style="width: 100%; height: 500px; background: #111; border-radius: 12px; margin-top: 20px; overflow: hidden;"></div>
+    function init() {
+        // 1. Сцена
+        scene = new THREE.Scene();
+        scene.background = null;
+        scene.environment = null;
 
-    </div>
+        // 2. Камера
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 5);
 
-    <script type="module">
-        // --- ЧАСТЬ 1: КОНФИГУРАЦИЯ И СОСТОЯНИЕ ---
-        const CORRECT_PASSWORD = 'pechnik2024';
-        const TOTAL_ROWS = 54;
+        // 3. Рендерер
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        document.body.appendChild(renderer.domElement);
 
-        let currentRow = 0;
-        let isAssemblyMode = false;
-        let isXRayMode = false;
-        let activeView = 'facade';
+        // 4. Орбитальное управление
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
 
-        let scene, camera, renderer, controls;
-        let model;
-        const bricksByRow = [];
+        // 5. Загрузка HDRI (окружение и фон)
+        const rgbeloader = new RGBELoader();
+        rgbeloader.load(hdrPath, function (texture) {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.environment = texture;
+            scene.background = texture;
+        }, undefined, function (err) {
+            console.error('Ошибка загрузки HDRI:', err);
+            scene.background = new THREE.Color(0x222222);
+        });
 
-        // --- ЧАСТЬ 2: ИНИЦИАЛИЗАЦИЯ THREE.JS ---
-        async function initThree() {
-            const container = document.getElementById('scene-container');
+        // 6. Загрузка модели (ОБНОВЛЕННЫЙ БЛОК)
+const gltfLoader = new GLTFLoader();
+gltfLoader.load(modelPath, function (gltf) {
+    model = gltf.scene;
 
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111111);
-            scene.fog = new THREE.Fog(0x111111, 10, 50);
+    // 1. Авто-центрирование (как было)
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    model.position.sub(center);
 
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(10, 10, 15);
+    // 2. ФИКС: Ставим печь ровно на пол (Y = 0)
+    model.position.y = 0; 
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
+    // 3. ФИКС: Чуть увеличиваем масштаб, если печь слишком мелкая
+    model.scale.set(1.3, 1.3, 1.3);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+    scene.add(model);
+}, undefined, function (err) {
+    console.error('Ошибка загрузки модели:', err);
+});
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-            dirLight.position.set(10, 20, 10);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+        // 7. Обработка ресайза окна
+        window.addEventListener('resize', onWindowResize, false);
+    }
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
 
-            window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 
-            await loadModel();
-            animate();
-        }
+    init();
+    animate();
+</script>
 
-        // --- ЧАСТЬ 3: ЗАГРУЗКА МОДЕЛИ ---
-        function loadModel() {
-            return new Promise((resolve, reject) => {
-                const loader = new THREE.GLTFLoader();
-                const modelPath = 'model/pech.glb'; 
-
-                loader.load(
-                    modelPath,
-                    (gltf) => {
-                        model = gltf.scene;
-                        model.traverse((child) => {
-                            if (child.isMesh) {
-                                const match = child.name.match(/Row_(\d+)/);
-                                if (match) {
-                                    const rowIndex = parseInt(match);
-                                    if (!bricksByRow[rowIndex]) bricksByRow[rowIndex] = [];
-                                    bricksByRow[rowIndex].push(child);
-                                }
-                            }
-                        });
-                        scene.add(model);
-                        console.log('Модель успешно загружена!');
-                        const statusEl = document.getElementById('webgl-status');
-                        if(statusEl) statusEl.textContent = 'WebGL: Модель загружена. Рендеринг...';
-                        resolve();
-                    },
-                    (xhr) => {
-                        const progress = (xhr.loaded / xhr.total) * 100;
-                        console.log(`\${progress}% загружено`);
-                    },
-                    (error) => {
-                        console.error('Ошибка загрузки модели:', error);
-                        // Создаем заглушку (куб)
-                        const geometry = new THREE.BoxGeometry(2, 2, 2);
-                        const material = new THREE.MeshStandardMaterial({ color: 0xff5722 });
-                        const cube = new THREE.Mesh(geometry, material);
-                        cube.castShadow = true;
-                        cube.receiveShadow = true;
-                        scene.add(cube);
-                        
-                        const statusEl = document.getElementById('webgl-status');
-                        if(statusEl) statusEl.textContent = 'Модель не найдена. Отображается тестовый объект.';
-                        resolve(); // Важно: разрешаем промис даже при ошибке, чтобы код не завис
-                    }
-                );
-            });
-        }
-
-        // --- ЧАСТЬ 4: ЛОГИКА ИНТЕРФЕЙСА (ПАРОЛЬ И ЛОАДЕР) ---
-        function checkPassword() {
-            const passwordInput = document.getElementById('password');
-            const errorMessage = document.getElementById('error-message');
-            const authSection = document.getElementById('auth-section');
-            const loadingContainer = document.getElementById('loading-container');
-            const controlPanel = document.getElementById('control-panel');
-
-            if (passwordInput.value === CORRECT_PASSWORD) {
-                authSection.style.display = 'none';
-                loadingContainer.style.display = 'block';
-                simulateLoading();
-            } else {
-                errorMessage.style.display = 'block';
-                passwordInput.value = '';
-                passwordInput.focus();
-            }
-        }
-
-        function simulateLoading() {
-            const statusText = document.getElementById('webgl-status');
-            const progressFill = document.querySelector('.progress'); 
-            const loadingContainer = document.getElementById('loading-container');
-            const controlPanel = document.getElementById('control-panel');
-
-            let progress = 0;
-            const steps = [
-                { percent: 10, text: 'WebGL: Инициализация контекста...' },
-                { percent: 30, text: 'Загрузка шейдеров...' },
-                { percent: 50, text: 'Парсинг геометрии...' },
-                { percent: 70, text: 'Применение материалов...' },
-                { percent: 90, text: 'Построение иерархии сцены...' },
-                { percent: 100, text: 'Готово. Рендеринг...' }
-            ];
-
-            let stepIndex = 0;
-
-            const interval = setInterval(() => {
-                if (stepIndex < steps.length) {
-                    const targetPercent = steps[stepIndex].percent;
-                    if (progress < targetPercent) {
-                        progress += 2;
-                        if(progressFill) progressFill.style.width = progress + '%';
-                        statusText.textContent = steps[stepIndex].text;
-                    } else {
-                        stepIndex++;
-                    }
-                } else {
-                    clearInterval(interval);
-                    loadingContainer.style.display = 'none';
-                    controlPanel.style.display = 'block';
-                    initThree();
-                    updateRowInfo();
-                }
-            }, 50);
-        }
-
-        // --- ЧАСТЬ 5: ФУНКЦИИ УПРАВЛЕНИЯ КНОПКАМИ ---
-        function toggleAssembly() {
-            isAssemblyMode = !isAssemblyMode;
-            const btn = event.target;
-            btn.classList.toggle('active', isAssemblyMode);
-
-            if (model) {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        if (child.name.includes('Hardware') || child.name.includes('Furniture')) {
-                            child.visible = isAssemblyMode;
-                        }
-                    }
-                });
-            }
-        }
-
-        function toggleXRay() {
-            isXRayMode = !isXRayMode;
-            const btn = event.target;
-            btn.classList.toggle('active', isXRayMode);
-
-            if (model) {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        const material = child.material;
-                        if (Array.isArray(material)) material = material;
-
-                        if (isXRayMode) {
-                            material.transparent = true;
-                            material.opacity = 0.6;
-                            material.emissive = new THREE.Color(0x00ffff);
-                            material.emissiveIntensity = 0.5;
-                        } else {
-                            material.transparent = false;
-                            material.opacity = 1.0;
-                            material.emissive = new THREE.Color(0x000000);
-                        }
-                    }
-                });
-            }
-        }
-
-        function toggleView(viewType) {
-            activeView = viewType;
-            const btn = event.target;
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            if (viewType === 'facade') {
-                camera.position.set(15, 10, 15);
-                camera.lookAt(0, 0, 0);
-            } else if (viewType === 'zabutovka') {
-                camera.position.set(-10, 10, 0);
-                camera.lookAt(0, 0, 0);
-            } else if (viewType === 'shamot') {
-                camera.position.set(5, 15, 5);
-                camera.lookAt(0, 0, 0);
-            } else if (viewType === 'casting') {
-                camera.position.set(0, 10, -15);
-                camera.lookAt(0, 0, 0);
-            } else if (viewType === 'countertop') {
-                camera.position.set(0, 20, 0);
-                camera.lookAt(0, 0, 0);
-            } else if (viewType === 'finishing') {
-                camera.position.set(20, 10, 10);
-                camera.lookAt(0, 0, 0);
-            }
-        }
-
-        function updateRowInfo() {
-            document.getElementById('current-row').textContent = currentRow;
-            document.getElementById('total-rows').textContent = TOTAL_ROWS;
-        }
-
-        // --- ЧАСТЬ 6: РЕНДЕРИНГ И АДАПТИВНОСТЬ ---
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        function onWindowResize() {
-            const container = document.getElementById('scene-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
-        }
-    </script>
 </body>
 </html>
