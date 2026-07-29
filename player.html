@@ -162,50 +162,43 @@
             // Обновляем текст текущего ряда в панели
             document.getElementById('current-row-txt').innerText = currentRenderedRow;
 
-            model.traverse(function (child) {
-                if (child.isMesh || child.isGroup) {
-                    let name = child.name ? child.name.toLowerCase() : "";
+            // Сканируем абсолютно ВСЕ узлы модели без привязки к типам (Group/Mesh/Object3D)
+            model.traverse(function (node) {
+                if (node.name) {
+                    let nodeName = node.name.toLowerCase();
                     
-                    // 1. УМНЫЙ ПОИСК РЯДА (поддерживает row_1, row_01, Ряд_01 и любые приписки)
-                    let objectRow = null;
-                    let parent = child;
+                    // Жесткий поиск: имя должно содержать "row_" и иметь цифры
+                    let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
                     
-                    while (parent) {
-                        let parentName = parent.name ? parent.name.toLowerCase() : "";
-                        let matchRow = parentName.match(/(?:row|ряд)[_-]?0*(\d+)/i);
-                        if (matchRow) {
-                            objectRow = parseInt(matchRow[1]);
-                            break;
+                    if (matchRow) {
+                        let rowNumber = parseInt(matchRow[1]); // Извлекаем чистый номер ряда
+                        
+                        // 1. УПРАВЛЕНИЕ РЯДАМИ
+                        if (rowNumber > currentRenderedRow) {
+                            node.visible = false;
+                            return; // Если ряд скрыт, дальше его внутренности не перебираем
+                        } else {
+                            node.visible = true;
                         }
-                        parent = parent.parent;
-                    }
 
-                    // 2. УМНЫЙ ПОИСК ПАЛИТРЫ (ищет вхождение слова в имя детали)
-                    let objectPalette = null;
-                    let paletteParent = child;
-                    
-                    while (paletteParent) {
-                        let pName = paletteParent.name ? paletteParent.name.toLowerCase() : "";
-                        for (let key in activePalettes) {
-                            if (pName.includes(key.toLowerCase())) {
-                                objectPalette = key;
-                                break;
+                        // 2. УПРАВЛЕНИЕ ПАЛИТРАМИ МАТЕРИАЛОВ ВНУТРИ ЭТОГО РЯДА
+                        if (node.children && node.children.length > 0) {
+                            for (let i = 0; i < node.children.length; i++) {
+                                let paletteGroup = node.children[i];
+                                
+                                if (paletteGroup.name) {
+                                    let pName = paletteGroup.name.toLowerCase();
+                                    let paletteValid = true;
+                                    
+                                    if (pName.includes('palette_brick_facade')) paletteValid = activePalettes['palette_brick_facade'];
+                                    if (pName.includes('palette_brick_building')) paletteValid = activePalettes['palette_brick_building'];
+                                    if (pName.includes('palette_brick_refractory')) paletteValid = activePalettes['palette_brick_refractory'];
+                                    if (pName.includes('palette_iron')) paletteValid = activePalettes['palette_iron'];
+                                    
+                                    paletteGroup.visible = paletteValid;
+                                }
                             }
                         }
-                        if (objectPalette) break;
-                        paletteParent = paletteParent.parent;
-                    }
-
-                    // 3. МАТРИЦА ВАЛИДАЦИИ
-                    let rowValid = (objectRow !== null) ? (objectRow <= currentRenderedRow) : true;
-                    let paletteValid = (objectPalette !== null) ? activePalettes[objectPalette] : true;
-
-                    // Управляем видимостью ВСЕХ вложенных элементов детали принудительно
-                    child.visible = (rowValid && paletteValid);
-                    
-                    // Дополнительный фикс для материалов вложенных сеток Mesh
-                    if (child.isMesh) {
-                        child.visible = (rowValid && paletteValid);
                     }
                 }
             });
