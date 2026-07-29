@@ -1,3 +1,8 @@
+Хорошо, возвращаем максимальную отзывчивость и убираем анимацию растворения. Теперь переключение происходит **мгновенно** как по кнопкам, так и по слайдеру.
+
+Вот **полный и финальный код плеера** без анимации, с аккуратным интерфейсом, работающим слайдером и кнопкой скриншота. Просто скопируйте его целиком в ваш `.html` файл.
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -21,12 +26,12 @@
             width: auto; min-width: 280px;
             opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible;
         }
-        /* Скрытое состояние */
+        /* Скрытое состояние панели */
         #control-panel.hidden {
             opacity: 0; transform: scale(0.9) translateY(15px); pointer-events: none; visibility: hidden;
         }
 
-        /* Кнопка сворачивания */
+        /* Кнопка сворачивания (плавающая) */
         .fab-btn {
             width: 34px; height: 34px; border-radius: 50%; border: none;
             background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px);
@@ -76,7 +81,6 @@
         .btn-toggle.active { background: #28a745; color: #fff; border-color: #28a745; }
     </style>
     
-    <!-- Твоя оригинальная рабочая карта импортов версии 0.160.0 -->
     <script type="importmap">
         {
             "imports": {
@@ -88,37 +92,30 @@
 </head>
 <body>
 
-<div id="ui-container">
-    <!-- Кнопка сворачивания (висит над панелью) -->
-    <button class="fab-btn" id="toggle-ui">⌃</button>
-
-    <!-- Основная панель -->
-    <div id="control-panel">
-        <div class="info-row">
-            <span>Порядовка</span>
-            <span class="row-counter">Ряд: <span id="current-row-txt">54</span>/54</span>
-        </div>
-
-        <div class="buttons-row">
-            <button class="btn" id="btn-prev">◀</button>
-            <button class="btn" id="btn-reset" title="Сбросить камеру">🏠</button>
-            <button class="btn btn-main" id="btn-next">▶</button>
-            <button class="btn btn-accent" id="btn-screenshot" title="Сделать скриншот">📷</button>
-        </div>
-
-        <!-- Слайдер -->
-        <div class="slider-row">
-            <input type="range" id="row-slider" min="1" max="54" value="54">
-        </div>
-
-        <div class="palettes-row">
-            <button class="btn-toggle active" data-layer="palette_brick_facade">Лицевой</button>
-            <button class="btn-toggle active" data-layer="palette_brick_building">Забутовка</button>
-            <button class="btn-toggle active" data-layer="palette_brick_refractory">Шамот</button>
-            <button class="btn-toggle active" data-layer="palette_iron">Литье</button>
+    <div id="ui-container">
+        <button class="fab-btn" id="toggle-ui">⌃</button>
+        <div id="control-panel">
+            <div class="info-row">
+                <span>Порядовка</span>
+                <span class="row-counter">Ряд: <span id="current-row-txt">54</span>/54</span>
+            </div>
+            <div class="buttons-row">
+                <button class="btn" id="btn-prev">◀</button>
+                <button class="btn" id="btn-reset" title="Сбросить камеру">🏠</button>
+                <button class="btn btn-main" id="btn-next">▶</button>
+                <button class="btn btn-accent" id="btn-screenshot" title="Сделать скриншот">📷</button>
+            </div>
+            <div class="slider-row">
+                <input type="range" id="row-slider" min="1" max="54" value="54">
+            </div>
+            <div class="palettes-row">
+                <button class="btn-toggle active" data-layer="palette_brick_facade">Лицевой</button>
+                <button class="btn-toggle active" data-layer="palette_brick_building">Забутовка</button>
+                <button class="btn-toggle active" data-layer="palette_brick_refractory">Шамот</button>
+                <button class="btn-toggle active" data-layer="palette_iron">Литье</button>
+            </div>
         </div>
     </div>
-</div>
 
     <script type="module">
         import * as THREE from 'three';
@@ -131,40 +128,99 @@
         const modelPath = 'model/pech.glb'; 
         
         let scene, camera, renderer, controls, model;
-        
-        // Переменные логики порядовки
         let maxRows = 54; 
         let currentRenderedRow = 54;
-
-        // Карта активности палитр материалов
         const activePalettes = {
             palette_brick_facade: true,
             palette_brick_building: true,
             palette_brick_refractory: true,
             palette_iron: true
         };
+
+        // --- ОСНОВНАЯ ЛОГИКА УПРАВЛЕНИЯ ВИДИМОСТЬЮ (МГНОВЕННО) ---
+        function updateVisibilityMatrix() {
+            if (!model) return;
+            document.getElementById('current-row-txt').innerText = currentRenderedRow;
+
+            model.traverse(function (node) {
+                if (!node.name) return;
+                let nodeName = node.name.trim().toLowerCase();
+
+                // 1. Управление рядами
+                let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
+                if (matchRow) {
+                    let rowNumber = parseInt(matchRow[1]);
+                    node.visible = (rowNumber <= currentRenderedRow);
+                }
+
+                // 2. Управление группами палитр
+                if (nodeName.includes('palette_brick_facade')) {
+                    node.visible = activePalettes['palette_brick_facade'];
+                    return;
+                } else if (nodeName.includes('palette_brick_building')) {
+                    node.visible = activePalettes['palette_brick_building'];
+                    return;
+                } else if (nodeName.includes('palette_brick_refractory')) {
+                    node.visible = activePalettes['palette_brick_refractory'];
+                    return;
+                } else if (nodeName.includes('palette_iron')) {
+                    node.visible = activePalettes['palette_iron'];
+                    return;
+                }
+
+                // 3. Управление отдельными кирпичами (по имени, материалу и родителю)
+                let matName = '';
+                if (node.isMesh && node.material) {
+                    if (Array.isArray(node.material)) {
+                        matName = node.material.map(m => (m.name ? m.name.trim().toLowerCase() : '')).join(' ');
+                    } else {
+                        matName = node.material.name ? node.material.name.trim().toLowerCase() : '';
+                    }
+                }
+                let parentName = node.parent && node.parent.name ? node.parent.name.trim().toLowerCase() : '';
+                let searchString = nodeName + ' ' + matName + ' ' + parentName;
+
+                let target = null;
+                if (searchString.includes('солома') || searchString.includes('темный') || searchString.includes('lf-')) {
+                    target = activePalettes['palette_brick_facade'];
+                } else if (searchString.includes('кирпич 1нф строительный') || searchString.includes('sp-')) {
+                    target = activePalettes['palette_brick_building'];
+                } else if (searchString.includes('[color_003]') || searchString.includes('[color_007]2') || searchString.includes('sh8-')) {
+                    target = activePalettes['palette_brick_refractory'];
+                } else if (
+                    searchString.includes('metal_06_1k1') || searchString.includes('*2') ||
+                    searchString.includes('дверка') || searchString.includes('дверца') || searchString.includes('колосник') ||
+                    searchString.includes('труба') || searchString.includes('шибер') || searchString.includes('уголок') ||
+                    searchString.includes('плита') || searchString.includes('гайка') || searchString.includes('шайба') ||
+                    searchString.includes('шпилька') || searchString.includes('подвес') || searchString.includes('тоннель')
+                ) {
+                    target = activePalettes['palette_iron'];
+                }
+
+                if (target !== null) {
+                    node.visible = target;
+                }
+            });
+        }
+
+        // --- ИНИЦИАЛИЗАЦИЯ THREE.JS ---
         function init() {
-            // 1. Сцена (как в твоем оригинале)
             scene = new THREE.Scene();
             scene.background = null;
             scene.environment = null;
 
-            // 2. Камера (как в твоем оригинале)
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
             resetCameraPosition();
 
-            // 3. Рендерер (как в твоем оригинале)
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             document.body.appendChild(renderer.domElement);
 
-            // 4. Орбитальное управление (как в твоем оригинале)
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
 
-            // 5. Загрузка HDRI (как в твоем оригинале)
             const rgbeloader = new RGBELoader();
             rgbeloader.load(hdrPath, function (texture) {
                 texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -175,12 +231,10 @@
                 scene.background = new THREE.Color(0x222222);
             });
 
-            // 6. Загрузка модели с добавлением обработчиков кнопок
             const gltfLoader = new GLTFLoader();
             gltfLoader.load(modelPath, function (gltf) {
                 model = gltf.scene;
-
-                // Авто-центрирование, Y=0 и масштаб (как в твоем оригинале)
+                
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.sub(center);
@@ -189,14 +243,14 @@
 
                 scene.add(model);
                 
-                // Включаем наши кнопки и палитры после успешной загрузки печи
+                window.model = model; // Для отладки
+
                 initInterfaceListeners();
                 updateVisibilityMatrix(); 
             }, undefined, function (err) {
                 console.error('Ошибка загрузки модели:', err);
             });
 
-            // 7. Обработка ресайза окна (как в твоем оригинале)
             window.addEventListener('resize', onWindowResize, false);
         }
 
@@ -205,124 +259,60 @@
             if (controls) controls.target.set(0, 1, 0);
         }
 
-        // Функция фильтрации: сверяет row_ и palette_
-function updateVisibilityMatrix() {
-    if (!model) return;
-    document.getElementById('current-row-txt').innerText = currentRenderedRow;
-
-    model.traverse(function (node) {
-        let nodeName = node.name ? node.name.trim().toLowerCase() : '';
-
-        // 1. Управление рядами (проверяем имя узла)
-        let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
-        if (matchRow) {
-            let rowNumber = parseInt(matchRow[1]);
-            node.visible = (rowNumber <= currentRenderedRow);
-        }
-
-        // 2. Управление группами палитр (если узел имеет имя палитры, выходим)
-        if (nodeName.includes('palette_brick_facade')) {
-            node.visible = activePalettes['palette_brick_facade'];
-            return;
-        } else if (nodeName.includes('palette_brick_building')) {
-            node.visible = activePalettes['palette_brick_building'];
-            return;
-        } else if (nodeName.includes('palette_brick_refractory')) {
-            node.visible = activePalettes['palette_brick_refractory'];
-            return;
-        } else if (nodeName.includes('palette_iron')) {
-            node.visible = activePalettes['palette_iron'];
-            return;
-        }
-
-        // 3. Берем имя Материала (если это меш) и имя Родителя
-        let matName = '';
-        if (node.isMesh && node.material) {
-            if (Array.isArray(node.material)) {
-                matName = node.material.map(m => (m.name ? m.name.trim().toLowerCase() : '')).join(' ');
-            } else {
-                matName = node.material.name ? node.material.name.trim().toLowerCase() : '';
-            }
-        }
-
-        let parentName = node.parent && node.parent.name ? node.parent.name.trim().toLowerCase() : '';
-        
-        // Объединяем всё в одну строку для поиска
-        let searchString = nodeName + ' ' + matName + ' ' + parentName;
-
-        // 4. Идеальное сопоставление по вашим данным из консоли
-        // Лицевой (ищем "солома", "темный" или "lf-")
-        if (searchString.includes('солома') || searchString.includes('темный') || searchString.includes('lf-')) {
-            node.visible = activePalettes['palette_brick_facade'];
-        }
-        // Забутовка (ищем "кирпич 1нф строительный" или "sp-")
-        else if (searchString.includes('кирпич 1нф строительный') || searchString.includes('sp-')) {
-            node.visible = activePalettes['palette_brick_building'];
-        }
-        // Шамот (ищем "[color_003]" или "[color_007]2" или "sh8-")
-        else if (searchString.includes('[color_003]') || searchString.includes('[color_007]2') || searchString.includes('sh8-')) {
-            node.visible = activePalettes['palette_brick_refractory'];
-        }
-        // Литье / Металл (ищем материалы и русские названия деталей)
-        else if (
-            searchString.includes('metal_06_1k1') || searchString.includes('*2') ||
-            searchString.includes('дверка') || searchString.includes('дверца') ||
-            searchString.includes('колосник') || searchString.includes('труба') ||
-            searchString.includes('шибер') || searchString.includes('уголок') ||
-            searchString.includes('плита') || searchString.includes('гайка') ||
-            searchString.includes('шайба') || searchString.includes('шпилька') ||
-            searchString.includes('подвес') || searchString.includes('тоннель')
-        ) {
-            node.visible = activePalettes['palette_iron'];
-        }
-    });
-}
-
+        // --- ОБРАБОТЧИКИ ИНТЕРФЕЙСА ---
         function initInterfaceListeners() {
-            // Кнопка Вперед
             document.getElementById('btn-next').addEventListener('click', () => {
                 if (currentRenderedRow < maxRows) {
                     currentRenderedRow++;
                     updateVisibilityMatrix();
+                    document.getElementById('row-slider').value = currentRenderedRow;
                 }
             });
 
-            // Кнопка Назад
             document.getElementById('btn-prev').addEventListener('click', () => {
                 if (currentRenderedRow > 1) {
                     currentRenderedRow--;
                     updateVisibilityMatrix();
+                    document.getElementById('row-slider').value = currentRenderedRow;
                 }
             });
 
-            // Кнопка Сброс камеры
             document.getElementById('btn-reset').addEventListener('click', () => {
                 resetCameraPosition();
             });
 
-            // Кнопки тумблеров палитр материалов
-            const toggleButtons = document.querySelectorAll('.btn-toggle');
-            toggleButtons.forEach(button => {
+            document.getElementById('btn-screenshot').addEventListener('click', function() {
+                renderer.render(scene, camera);
+                const link = document.createElement('a');
+                link.download = `poryadovka_ryad_${currentRenderedRow}.png`;
+                link.href = renderer.domElement.toDataURL('image/png');
+                link.click();
+            });
+
+            // Слайдер
+            document.getElementById('row-slider').addEventListener('input', function() {
+                const newRow = parseInt(this.value);
+                if (newRow !== currentRenderedRow) {
+                    currentRenderedRow = newRow;
+                    updateVisibilityMatrix();
+                }
+            });
+
+            // Кнопки палитр
+            document.querySelectorAll('.btn-toggle').forEach(button => {
                 button.addEventListener('click', function() {
                     const layerName = this.getAttribute('data-layer');
                     this.classList.toggle('active');
-                    
-                    // Меняем статус палитры (true/false) и обновляем экран
                     activePalettes[layerName] = this.classList.contains('active');
                     updateVisibilityMatrix();
                 });
             });
-        }
 
-        // Слайдер
-        const slider = document.getElementById('row-slider');
-        slider.addEventListener('input', function() {
-            const newRow = parseInt(this.value);
-            if (newRow !== currentRenderedRow) {
-                currentRenderedRow = newRow;
-                updateVisibilityMatrix();
-            }
-        });
+            // Кнопка сворачивания панели
+            document.getElementById('toggle-ui').addEventListener('click', function() {
+                document.getElementById('control-panel').classList.toggle('hidden');
+            });
+        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -335,27 +325,11 @@ function updateVisibilityMatrix() {
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
-        // --- ДОБАВЛЕНИЕ: Сворачивание интерфейса ---
-        document.getElementById('toggle-ui').addEventListener('click', function() {
-            const panel = document.getElementById('control-panel');
-            panel.classList.toggle('hidden');
-            // Вращаем кнопку-стрелочку
-            this.classList.toggle('open');
-        });
 
-        // --- ДОБАВЛЕНИЕ: Скриншот ---
-        document.getElementById('btn-screenshot').addEventListener('click', function() {
-            // Делаем принудительный рендер, чтобы захватить последнее состояние
-            renderer.render(scene, camera);
-            // Получаем канвас и создаем ссылку для скачивания
-            const link = document.createElement('a');
-            link.download = `poryadovka_ryad_${currentRenderedRow}.png`;
-            link.href = renderer.domElement.toDataURL('image/png');
-            link.click();
-        });
-        // Официальный старт
+        // ЗАПУСК
         init();
         animate();
     </script>
 </body>
 </html>
+```
