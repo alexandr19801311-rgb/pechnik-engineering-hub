@@ -2,13 +2,43 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>3D Player — Печь</title>
+    <title>3D Player — Печь с порядовкой</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* Удобная панель управления под грязные руки */
+        #control-panel {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 10; width: 90%; max-width: 500px; background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 15px; box-sizing: border-box;
+        }
+        
+        .info-row { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 18px; font-weight: bold; }
+        .row-counter { background: #ff6b00; padding: 4px 12px; border-radius: 20px; font-size: 16px; }
+        
+        .buttons-row { display: flex; gap: 10px; width: 100%; }
+        .btn {
+            flex: 1; height: 60px; border: none; background: #2a2a2a; color: #fff;
+            font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn:active { background: #444; }
+        .btn-main { background: #ff6b00; }
+        .btn-main:active { background: #e05e00; }
+        
+        .palettes-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .btn-toggle {
+            padding: 8px 14px; font-size: 13px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-weight: 500;
+        }
+        .btn-toggle.active { background: #28a745; color: #fff; border-color: #28a745; }
     </style>
     
-    <!-- Import Map: говорит браузеру, что "three" и "three/addons" — это ссылки на CDN -->
+    <!-- Твоя оригинальная рабочая карта импортов версии 0.160.0 -->
     <script type="importmap">
         {
             "imports": {
@@ -20,92 +50,218 @@
 </head>
 <body>
 
-<script type="module">
-    // Теперь эти импорты будут работать, так как мы настроили importmap выше
-    import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+    <div id="control-panel">
+        <div class="info-row">
+            <span>Порядовка комплекса</span>
+            <span class="row-counter">Ряд: <span id="current-row-txt">54</span>/54</span>
+        </div>
+        
+        <div class="buttons-row">
+            <button class="btn" id="btn-prev">◀ НАЗАД</button>
+            <button class="btn" id="btn-reset" title="Сбросить камеру">🏠</button>
+            <button class="btn btn-main" id="btn-next">ВПЕРЕД ▶</button>
+        </div>
 
-    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
-    const hdrPath = 'park.hdr';          // Твой локальный файл (должен лежать рядом с html)
-    const modelPath = 'model/pech.glb'; // Путь к модели
-    // -------------------------------
+        <div class="palettes-row">
+            <button class="btn-toggle active" data-layer="palette_brick_facade">Лицевой</button>
+            <button class="btn-toggle active" data-layer="palette_brick_building">Забутовка</button>
+            <button class="btn-toggle active" data-layer="palette_brick_refractory">Шамот</button>
+            <button class="btn-toggle active" data-layer="palette_iron">Литье</button>
+        </div>
+    </div>
 
-    let scene, camera, renderer, controls, model;
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-    function init() {
-        // 1. Сцена
-        scene = new THREE.Scene();
-        scene.background = null;
-        scene.environment = null;
+        // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+        const hdrPath = 'park.hdr';          
+        const modelPath = 'model/pech.glb'; 
+        
+        let scene, camera, renderer, controls, model;
+        
+        // Переменные логики порядовки
+        let maxRows = 54; 
+        let currentRenderedRow = 54;
 
-        // 2. Камера
-        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 2, 5);
+        // Карта активности палитр материалов
+        const activePalettes = {
+            palette_brick_facade: true,
+            palette_brick_building: true,
+            palette_brick_refractory: true,
+            palette_iron: true
+        };
+        function init() {
+            // 1. Сцена (как в твоем оригинале)
+            scene = new THREE.Scene();
+            scene.background = null;
+            scene.environment = null;
 
-        // 3. Рендерер
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        document.body.appendChild(renderer.domElement);
+            // 2. Камера (как в твоем оригинале)
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+            resetCameraPosition();
 
-        // 4. Орбитальное управление
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+            // 3. Рендерер (как в твоем оригинале)
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            document.body.appendChild(renderer.domElement);
 
-        // 5. Загрузка HDRI (окружение и фон)
-        const rgbeloader = new RGBELoader();
-        rgbeloader.load(hdrPath, function (texture) {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.environment = texture;
-            scene.background = texture;
-        }, undefined, function (err) {
-            console.error('Ошибка загрузки HDRI:', err);
-            scene.background = new THREE.Color(0x222222);
-        });
+            // 4. Орбитальное управление (как в твоем оригинале)
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
 
-        // 6. Загрузка модели (ОБНОВЛЕННЫЙ БЛОК)
-const gltfLoader = new GLTFLoader();
-gltfLoader.load(modelPath, function (gltf) {
-    model = gltf.scene;
+            // 5. Загрузка HDRI (как в твоем оригинале)
+            const rgbeloader = new RGBELoader();
+            rgbeloader.load(hdrPath, function (texture) {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.environment = texture;
+                scene.background = texture;
+            }, undefined, function (err) {
+                console.error('Ошибка загрузки HDRI:', err);
+                scene.background = new THREE.Color(0x222222);
+            });
 
-    // 1. Авто-центрирование (как было)
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center);
+            // 6. Загрузка модели с добавлением обработчиков кнопок
+            const gltfLoader = new GLTFLoader();
+            gltfLoader.load(modelPath, function (gltf) {
+                model = gltf.scene;
 
-    // 2. ФИКС: Ставим печь ровно на пол (Y = 0)
-    model.position.y = 0; 
+                // Авто-центрирование, Y=0 и масштаб (как в твоем оригинале)
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                model.position.y = 0; 
+                model.scale.set(1.3, 1.3, 1.3);
 
-    // 3. ФИКС: Чуть увеличиваем масштаб, если печь слишком мелкая
-    model.scale.set(1.3, 1.3, 1.3);
+                scene.add(model);
+                
+                // Включаем наши кнопки и палитры после успешной загрузки печи
+                initInterfaceListeners();
+                updateVisibilityMatrix(); 
+            }, undefined, function (err) {
+                console.error('Ошибка загрузки модели:', err);
+            });
 
-    scene.add(model);
-}, undefined, function (err) {
-    console.error('Ошибка загрузки модели:', err);
-});
+            // 7. Обработка ресайза окна (как в твоем оригинале)
+            window.addEventListener('resize', onWindowResize, false);
+        }
 
-        // 7. Обработка ресайза окна
-        window.addEventListener('resize', onWindowResize, false);
-    }
+        function resetCameraPosition() {
+            camera.position.set(0, 2, 5);
+            if (controls) controls.target.set(0, 1, 0);
+        }
 
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
+        // Функция фильтрации: сверяет row_ и palette_
+        function updateVisibilityMatrix() {
+            if (!model) return;
 
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+            // Обновляем текст текущего ряда в панели
+            document.getElementById('current-row-txt').innerText = currentRenderedRow;
 
-    init();
-    animate();
-</script>
+            model.traverse(function (child) {
+                if (child.isMesh || child.isGroup) {
+                    let name = child.name ? child.name.toLowerCase() : "";
+                    
+                    // 1. УМНЫЙ ПОИСК РЯДА (поддерживает row_1, row_01, Ряд_01 и любые приписки)
+                    let objectRow = null;
+                    let parent = child;
+                    
+                    while (parent) {
+                        let parentName = parent.name ? parent.name.toLowerCase() : "";
+                        let matchRow = parentName.match(/(?:row|ряд)[_-]?0*(\d+)/i);
+                        if (matchRow) {
+                            objectRow = parseInt(matchRow[1]);
+                            break;
+                        }
+                        parent = parent.parent;
+                    }
 
+                    // 2. УМНЫЙ ПОИСК ПАЛИТРЫ (ищет вхождение слова в имя детали)
+                    let objectPalette = null;
+                    let paletteParent = child;
+                    
+                    while (paletteParent) {
+                        let pName = paletteParent.name ? paletteParent.name.toLowerCase() : "";
+                        for (let key in activePalettes) {
+                            if (pName.includes(key.toLowerCase())) {
+                                objectPalette = key;
+                                break;
+                            }
+                        }
+                        if (objectPalette) break;
+                        paletteParent = paletteParent.parent;
+                    }
+
+                    // 3. МАТРИЦА ВАЛИДАЦИИ
+                    let rowValid = (objectRow !== null) ? (objectRow <= currentRenderedRow) : true;
+                    let paletteValid = (objectPalette !== null) ? activePalettes[objectPalette] : true;
+
+                    // Управляем видимостью ВСЕХ вложенных элементов детали принудительно
+                    child.visible = (rowValid && paletteValid);
+                    
+                    // Дополнительный фикс для материалов вложенных сеток Mesh
+                    if (child.isMesh) {
+                        child.visible = (rowValid && paletteValid);
+                    }
+                }
+            });
+        }
+
+        function initInterfaceListeners() {
+            // Кнопка Вперед
+            document.getElementById('btn-next').addEventListener('click', () => {
+                if (currentRenderedRow < maxRows) {
+                    currentRenderedRow++;
+                    updateVisibilityMatrix();
+                }
+            });
+
+            // Кнопка Назад
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if (currentRenderedRow > 1) {
+                    currentRenderedRow--;
+                    updateVisibilityMatrix();
+                }
+            });
+
+            // Кнопка Сброс камеры
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                resetCameraPosition();
+            });
+
+            // Кнопки тумблеров палитр материалов
+            const toggleButtons = document.querySelectorAll('.btn-toggle');
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const layerName = this.getAttribute('data-layer');
+                    this.classList.toggle('active');
+                    
+                    // Меняем статус палитры (true/false) и обновляем экран
+                    activePalettes[layerName] = this.classList.contains('active');
+                    updateVisibilityMatrix();
+                });
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Официальный старт
+        init();
+        animate();
+    </script>
 </body>
 </html>
