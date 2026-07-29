@@ -156,53 +156,77 @@
         }
 
         // Функция фильтрации: сверяет row_ и palette_
-        function updateVisibilityMatrix() {
-            if (!model) return;
+function updateVisibilityMatrix() {
+    if (!model) return;
+    document.getElementById('current-row-txt').innerText = currentRenderedRow;
 
-            // Обновляем текст текущего ряда в панели
-            document.getElementById('current-row-txt').innerText = currentRenderedRow;
+    model.traverse(function (node) {
+        let nodeName = node.name ? node.name.trim().toLowerCase() : '';
 
-            // Сканируем абсолютно ВСЕ узлы модели без привязки к типам (Group/Mesh/Object3D)
-            model.traverse(function (node) {
-                if (node.name) {
-                    let nodeName = node.name.toLowerCase();
-                    
-                    // Жесткий поиск: имя должно содержать "row_" и иметь цифры
-                    let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
-                    
-                    if (matchRow) {
-                        let rowNumber = parseInt(matchRow[1]); // Извлекаем чистый номер ряда
-                        
-                        // 1. УПРАВЛЕНИЕ РЯДАМИ
-                        if (rowNumber > currentRenderedRow) {
-                            node.visible = false;
-                            return; // Если ряд скрыт, дальше его внутренности не перебираем
-                        } else {
-                            node.visible = true;
-                        }
-
-                        // 2. УПРАВЛЕНИЕ ПАЛИТРАМИ МАТЕРИАЛОВ ВНУТРИ ЭТОГО РЯДА
-                        if (node.children && node.children.length > 0) {
-                            for (let i = 0; i < node.children.length; i++) {
-                                let paletteGroup = node.children[i];
-                                
-                                if (paletteGroup.name) {
-                                    let pName = paletteGroup.name.toLowerCase();
-                                    let paletteValid = true;
-                                    
-                                    if (pName.includes('palette_brick_facade')) paletteValid = activePalettes['palette_brick_facade'];
-                                    if (pName.includes('palette_brick_building')) paletteValid = activePalettes['palette_brick_building'];
-                                    if (pName.includes('palette_brick_refractory')) paletteValid = activePalettes['palette_brick_refractory'];
-                                    if (pName.includes('palette_iron')) paletteValid = activePalettes['palette_iron'];
-                                    
-                                    paletteGroup.visible = paletteValid;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+        // 1. Управление рядами (проверяем имя узла)
+        let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
+        if (matchRow) {
+            let rowNumber = parseInt(matchRow[1]);
+            node.visible = (rowNumber <= currentRenderedRow);
         }
+
+        // 2. Управление группами палитр (если узел имеет имя палитры, выходим)
+        if (nodeName.includes('palette_brick_facade')) {
+            node.visible = activePalettes['palette_brick_facade'];
+            return;
+        } else if (nodeName.includes('palette_brick_building')) {
+            node.visible = activePalettes['palette_brick_building'];
+            return;
+        } else if (nodeName.includes('palette_brick_refractory')) {
+            node.visible = activePalettes['palette_brick_refractory'];
+            return;
+        } else if (nodeName.includes('palette_iron')) {
+            node.visible = activePalettes['palette_iron'];
+            return;
+        }
+
+        // 3. Берем имя Материала (если это меш) и имя Родителя
+        let matName = '';
+        if (node.isMesh && node.material) {
+            if (Array.isArray(node.material)) {
+                matName = node.material.map(m => (m.name ? m.name.trim().toLowerCase() : '')).join(' ');
+            } else {
+                matName = node.material.name ? node.material.name.trim().toLowerCase() : '';
+            }
+        }
+
+        let parentName = node.parent && node.parent.name ? node.parent.name.trim().toLowerCase() : '';
+        
+        // Объединяем всё в одну строку для поиска
+        let searchString = nodeName + ' ' + matName + ' ' + parentName;
+
+        // 4. Идеальное сопоставление по вашим данным из консоли
+        // Лицевой (ищем "солома", "темный" или "lf-")
+        if (searchString.includes('солома') || searchString.includes('темный') || searchString.includes('lf-')) {
+            node.visible = activePalettes['palette_brick_facade'];
+        }
+        // Забутовка (ищем "кирпич 1нф строительный" или "sp-")
+        else if (searchString.includes('кирпич 1нф строительный') || searchString.includes('sp-')) {
+            node.visible = activePalettes['palette_brick_building'];
+        }
+        // Шамот (ищем "[color_003]" или "[color_007]2" или "sh8-")
+        else if (searchString.includes('[color_003]') || searchString.includes('[color_007]2') || searchString.includes('sh8-')) {
+            node.visible = activePalettes['palette_brick_refractory'];
+        }
+        // Литье / Металл (ищем материалы и русские названия деталей)
+        else if (
+            searchString.includes('metal_06_1k1') || searchString.includes('*2') ||
+            searchString.includes('дверка') || searchString.includes('дверца') ||
+            searchString.includes('колосник') || searchString.includes('труба') ||
+            searchString.includes('шибер') || searchString.includes('уголок') ||
+            searchString.includes('плита') || searchString.includes('гайка') ||
+            searchString.includes('шайба') || searchString.includes('шпилька') ||
+            searchString.includes('подвес') || searchString.includes('тоннель')
+        ) {
+            node.visible = activePalettes['palette_iron'];
+        }
+    });
+}
 
         function initInterfaceListeners() {
             // Кнопка Вперед
