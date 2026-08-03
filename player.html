@@ -2,109 +2,76 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>3D Player — Печь с порядовкой</title>
+    <title>3D Плеер — Проект печи</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
         canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        #ui-container {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+        #branding {
+            position: absolute; top: 20px; left: 20px; z-index: 20; display: none;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; align-items: center; gap: 12px; pointer-events: none;
         }
+        #branding img { height: 30px; width: auto; display: block; }
+        #branding span { font-size: 18px; font-weight: bold; }
+        #branding.active { display: flex; }
 
-        #control-panel {
-            background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.08); padding: 14px 18px;
-            border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-            display: flex; flex-direction: column; gap: 12px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            width: auto; min-width: 280px;
-            opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible;
+        #access-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; color: #fff;
         }
-        #control-panel.hidden {
-            opacity: 0; transform: scale(0.9) translateY(15px); pointer-events: none; visibility: hidden;
-        }
-
-        .fab-btn {
-            width: 34px; height: 34px; border-radius: 50%; border: none;
-            background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px);
-            color: #fff; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            display: flex; align-items: center; justify-content: center;
-            transition: transform 0.2s;
-        }
-        .fab-btn:active { transform: scale(0.9); }
+        #access-screen h1 { font-size: 28px; margin-bottom: 10px; }
+        #access-screen p { color: #888; margin-bottom: 20px; }
+        #access-screen.hidden { display: none; }
         
+        .input-group { display: flex; gap: 10px; align-items: center; background: #222; padding: 10px; border-radius: 12px; border: 1px solid #333; }
+        .input-group input { 
+            background: transparent; border: none; color: #fff; font-size: 18px; 
+            padding: 10px 15px; width: 200px; outline: none; letter-spacing: 2px;
+        }
+        .input-group button {
+            padding: 12px 24px; border: none; border-radius: 8px;
+            background: #ff6b00; color: #fff; font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .input-group button:active { background: #e05e00; }
+        #error-msg { color: #ff4d4d; font-size: 14px; margin-top: 15px; display: none; }
+
+        #ui-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        #control-panel { background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); padding: 14px 18px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 12px; transition: all 0.25s; width: auto; min-width: 280px; opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible; }
+        #control-panel.hidden { opacity: 0; transform: scale(0.9) translateY(15px); pointer-events: none; visibility: hidden; }
+        .fab-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); color: #fff; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        .fab-btn:active { transform: scale(0.9); }
         .info-row { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 16px; font-weight: 600; }
         .row-counter { background: #ff6b00; padding: 2px 10px; border-radius: 16px; font-size: 13px; }
-        
         .buttons-row { display: flex; gap: 8px; width: 100%; }
-        .btn {
-            flex: 1; height: 48px; border: none; background: #2a2a2a; color: #fff;
-            font-size: 20px; border-radius: 10px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .btn { flex: 1; height: 48px; border: none; background: #2a2a2a; color: #fff; font-size: 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .btn:active { background: #444; }
         .btn-main { background: #ff6b00; }
         .btn-main:active { background: #e05e00; }
         .btn-accent { background: #28a745; font-size: 18px; }
         .btn-accent:active { background: #1e8a37; }
-        
         .slider-row { width: 100%; padding: 0 4px; }
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; height: 4px;
-            background: #444; border-radius: 2px; outline: none;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 18px; height: 18px; border-radius: 50%;
-            background: #ff6b00; cursor: pointer; border: 2px solid #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        input[type=range]::-moz-range-thumb {
-            width: 18px; height: 18px; border-radius: 50%;
-            background: #ff6b00; cursor: pointer; border: 2px solid #fff;
-        }
-        
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: #444; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #ff6b00; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #ff6b00; cursor: pointer; border: 2px solid #fff; }
         .palettes-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-        .btn-toggle {
-            padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-weight: 500;
-        }
+        .btn-toggle { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-weight: 500; }
         .btn-toggle.active { background: #28a745; color: #fff; border-color: #28a745; }
-
-        #modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
-            z-index: 100; display: none; justify-content: center; align-items: center;
-        }
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 100; display: none; justify-content: center; align-items: center; }
         #modal-overlay.open { display: flex; }
-        
-        #modal-content {
-            background: #1e1e1e; border: 1px solid #444; border-radius: 16px;
-            width: 90%; max-width: 700px; max-height: 80vh;
-            padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            overflow-y: auto; color: #fff; position: relative;
-        }
+        #modal-content { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; width: 90%; max-width: 700px; max-height: 80vh; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow-y: auto; color: #fff; position: relative; }
         #modal-content h2 { margin: 0 0 15px 0; font-size: 22px; border-bottom: 2px solid #ff6b00; padding-bottom: 10px; }
-        #modal-close {
-            position: absolute; top: 15px; right: 20px;
-            font-size: 28px; cursor: pointer; color: #888; transition: color 0.2s;
-        }
+        #modal-close { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: #888; transition: color 0.2s; }
         #modal-close:hover { color: #fff; }
-        
         .spec-group { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2a2a2a; }
-        .spec-group h3 { 
-            color: #28a745; margin: 0 0 10px 0; font-size: 16px; 
-            border-bottom: 1px solid #333; padding-bottom: 4px;
-        }
+        .spec-group h3 { color: #28a745; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 4px; }
         .spec-line { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; color: #ccc; }
         .spec-line span:last-child { color: #fff; font-weight: bold; }
-        
-        .spec-metal-total {
-            margin-top: 8px; padding-top: 8px; border-top: 1px dashed #555;
-            display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: #ff6b00;
-        }
+        .spec-metal-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #555; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: #ff6b00; }
         .grand-total { margin-top: 20px; padding-top: 15px; border-top: 3px double #444; text-align: right; font-size: 17px; font-weight: bold; color: #ff6b00; }
         .grand-total span { color: #fff; font-weight: normal; }
     </style>
@@ -119,6 +86,21 @@
     </script>
 </head>
 <body>
+
+    <div id="branding">
+        <img id="project-logo" src="" alt="logo" onerror="this.style.display='none'">
+        <span id="project-title">Проект</span>
+    </div>
+
+    <div id="access-screen">
+        <h1>🔒 Доступ к проекту</h1>
+        <p>Введите номер заказа или ключ для просмотра 3D-модели</p>
+        <div class="input-group">
+            <input type="text" id="access-code" placeholder="Введите код" maxlength="20">
+            <button id="btn-unlock">Загрузить</button>
+        </div>
+        <div id="error-msg">Ключ недействителен или заказ не найден.</div>
+    </div>
 
     <div id="ui-container">
         <button class="fab-btn" id="toggle-ui">⌃</button>
@@ -159,8 +141,7 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-        const hdrPath = 'park.hdr';          
-        const modelPath = 'model/pech.glb'; 
+        const hdrPath = 'park.hdr'; 
         const BASE_KIRPICH = 250; 
         
         let scene, camera, renderer, controls, model;
@@ -173,139 +154,19 @@
             palette_iron: true
         };
 
-        const specData = {
-            "Лицевой светлый": {
-                "LF-250-ST": { "qty": 829, "length": 250 },
-                "LF-120-ST": { "qty": 54, "length": 120 },
-                "LF-185-ST": { "qty": 24, "length": 185 },
-                "LF-227-ST": { "qty": 22, "length": 227 },
-                "LF-250-N01": { "qty": 24, "length": 250 },
-                "LF-250-N02": { "qty": 1, "length": 250 },
-                "LF-250-N03": { "qty": 1, "length": 250 },
-                "LF-180-A22.5": { "qty": 26, "length": 180 },
-                "LF-157-A22.5": { "qty": 26, "length": 157 },
-                "LF-237-A45": { "qty": 12, "length": 237 },
-                "LF-250-A45": { "qty": 2, "length": 250 },
-                "LF-50-A22.5": { "qty": 46, "length": 50 },
-                "LF-109-A45": { "qty": 14, "length": 109 }
-            },
-            "Лицевой тёмный": {
-                "LF_dark-250-ST": { "qty": 139, "length": 250 },
-                "LF_dark-120-ST": { "qty": 27, "length": 120 },
-                "LF_dark-150-ST": { "qty": 22, "length": 150 },
-                "LF_dark-140-ST": { "qty": 12, "length": 140 },
-                "LF_dark-205-ST": { "qty": 8, "length": 205 },
-                "LF_dark-55-ST": { "qty": 12, "length": 55 },
-                "LF_dark-50-A22.5": { "qty": 4, "length": 50 },
-                "LF_dark-227-ST": { "qty": 2, "length": 227 },
-                "LF_dark-180-A22.5": { "qty": 2, "length": 180 },
-                "LF_dark-225-ST": { "qty": 2, "length": 225 },
-                "LF_dark-230-A45": { "qty": 2, "length": 230 },
-                "LF_dark-237-A45": { "qty": 2, "length": 237 },
-                "LF_dark-135-A22.5": { "qty": 2, "length": 135 },
-                "LF_dark-47-A22.5": { "qty": 2, "length": 47 },
-                "LF_dark-92-A45": { "qty": 2, "length": 92 }
-            },
-            "Забутовка": {
-                "SP-250-ST": { "qty": 402, "length": 250 },
-                "SP-120-ST": { "qty": 20, "length": 120 },
-                "SP-110-A45": { "qty": 29, "length": 110 },
-                "SP-185-ST": { "qty": 12, "length": 185 },
-                "SP-239-A45": { "qty": 9, "length": 239 },
-                "SP-52-A45": { "qty": 8, "length": 52 },
-                "SP-250-A42": { "qty": 9, "length": 250 },
-                "SP-250-A45": { "qty": 3, "length": 250 },
-                "SP-250-N01": { "qty": 2, "length": 250 },
-                "SP-100-A45": { "qty": 2, "length": 100 },
-                "SP-32-A45": { "qty": 4, "length": 32 },
-                "SP-55-ST": { "qty": 14, "length": 55 },
-                "SP-127-A45": { "qty": 3, "length": 127 },
-                "SP-143-A45": { "qty": 1, "length": 143 },
-                "SP-163-A45": { "qty": 2, "length": 163 },
-                "SP-164-A45": { "qty": 2, "length": 164 },
-                "SP-182-A45": { "qty": 4, "length": 182 },
-                "SP-185-A42": { "qty": 4, "length": 185 },
-                "SP-220-ST": { "qty": 2, "length": 220 },
-                "SP-236-A45": { "qty": 1, "length": 236 },
-                "SP-42-A45": { "qty": 2, "length": 42 },
-                "SP-68-A45": { "qty": 1, "length": 68 },
-                "SP-250-N05": { "qty": 1, "length": 250 },
-                "SP-250-N06": { "qty": 1, "length": 250 }
-            },
-            "Шамот": {
-                "SH8-250-ST": { "qty": 110, "length": 250 },
-                "SH8-124-ST": { "qty": 11, "length": 124 },
-                "SH8-187-A42": { "qty": 21, "length": 187 },
-                "SH8-250-A42": { "qty": 16, "length": 250 },
-                "SH8-214-ST": { "qty": 9, "length": 214 },
-                "SH8-250-N05": { "qty": 6, "length": 250 },
-                "SH8-250-N08": { "qty": 4, "length": 250 },
-                "SH8-187-ST": { "qty": 4, "length": 187 },
-                "SH8-61-A42": { "qty": 4, "length": 61 },
-                "SH8-122-ST": { "qty": 2, "length": 122 },
-                "SH8-165-ST": { "qty": 2, "length": 165 },
-                "SH8-16-ST": { "qty": 2, "length": 16 },
-                "SH8-124-A42": { "qty": 2, "length": 124 },
-                "SH8-114-ST": { "qty": 2, "length": 114 },
-                "SH8-182-A42": { "qty": 1, "length": 182 },
-                "SH8-183-ST": { "qty": 1, "length": 183 },
-                "SH8-185-ST": { "qty": 1, "length": 185 },
-                "SH8-22-ST": { "qty": 1, "length": 22 },
-                "SH8-246-ST": { "qty": 1, "length": 246 },
-                "SH8-250-N01": { "qty": 8, "length": 250 },
-                "SH8-250-N02": { "qty": 2, "length": 250 }
-            },
-            "Литье / Металл": {
-                "Труба d 150 L = 0,5 м, 1 мм нерж.": { "qty": 1, "length": 250 },
-                "Труба d-150 L = 0,25 м, 1 мм нерж.#1": { "qty": 2, "length": 250 },
-                "Труба d-150 L = 1,0 м, 1 мм нерж.": { "qty": 1, "length": 250 },
-                "Труба отвод 135°d-150-1 мм нерж.": { "qty": 1, "length": 250 },
-                "Труба отвод 90°d-150-1 мм нерж.": { "qty": 1, "length": 250 },
-                "Труба отвод 90°d-150-1 мм нерж.#1": { "qty": 1, "length": 250 },
-                "Уголок 50*50*5-250 мм": { "qty": 8, "length": 250 },
-                "Уголок 50*50*5-445 мм": { "qty": 2, "length": 250 },
-                "Уголок 50*50*5-510 мм": { "qty": 12, "length": 250 },
-                "Уголок 50*50*5-705 мм": { "qty": 2, "length": 250 },
-                "Уголок 50*50*5-900 мм": { "qty": 3, "length": 250 },
-                "Уголок 75*75*5-510 мм": { "qty": 2, "length": 250 },
-                "Уголок 75*75*5-640 мм": { "qty": 1, "length": 250 },
-                "Уголок 75*75*5-900 мм": { "qty": 1, "length": 250 },
-                "Дверка ниши (левая)": { "qty": 1, "length": 250 },
-                "Дверка ниши (правая)": { "qty": 1, "length": 250 },
-                "Дверка ниши (правая)#1": { "qty": 1, "length": 250 },
-                "Дверца_Поддувальная_250*140": { "qty": 1, "length": 250 },
-                "Дверца_Топочная_250*210": { "qty": 1, "length": 250 },
-                "Колосник 250х300 мм": { "qty": 1, "length": 250 },
-                "Плита для казана 512х512 мм": { "qty": 1, "length": 250 },
-                "Мойка 750*510 мм": { "qty": 1, "length": 250 },
-                "Тоннель монтажный 250*140 мм": { "qty": 1, "length": 250 },
-                "Тоннель монтажный 250*210": { "qty": 1, "length": 250 },
-                "Подвес прямой Пп 60х27": { "qty": 26, "length": 250 },
-                "Подвес прямой Пп 60х27#половинка": { "qty": 34, "length": 250 },
-                "Шибер ЗВП-2": { "qty": 1, "length": 250 },
-                "Шибер ЗВП-2#1": { "qty": 1, "length": 250 },
-                "Базальтовый картон": { "qty": 14, "length": 250 },
-                "Гайка м10": { "qty": 2, "length": 250 },
-                "Шайба увеличенная м10": { "qty": 2, "length": 250 },
-                "Шпилька м10-1000 мм": { "qty": 1, "length": 250 },
-                "Подсветка": { "qty": 1, "length": 250 }
-            }
-        };
+        let currentSpecData = null;
 
         function updateVisibilityMatrix() {
             if (!model) return;
             document.getElementById('current-row-txt').innerText = currentRenderedRow;
-
             model.traverse(function (node) {
                 if (!node.name) return;
                 let nodeName = node.name.trim().toLowerCase();
-
                 let matchRow = nodeName.match(/row_[_-]?0*(\d+)/);
                 if (matchRow) {
                     let rowNumber = parseInt(matchRow[1]);
                     node.visible = (rowNumber <= currentRenderedRow);
                 }
-
                 if (nodeName.includes('palette_brick_facade')) {
                     node.visible = activePalettes['palette_brick_facade'];
                     return;
@@ -319,7 +180,6 @@
                     node.visible = activePalettes['palette_iron'];
                     return;
                 }
-
                 let matName = '';
                 if (node.isMesh && node.material) {
                     if (Array.isArray(node.material)) {
@@ -330,7 +190,6 @@
                 }
                 let parentName = node.parent && node.parent.name ? node.parent.name.trim().toLowerCase() : '';
                 let searchString = nodeName + ' ' + matName + ' ' + parentName;
-
                 let target = null;
                 if (searchString.includes('солома') || searchString.includes('темный') || searchString.includes('lf-')) {
                     target = activePalettes['palette_brick_facade'];
@@ -347,7 +206,6 @@
                 ) {
                     target = activePalettes['palette_iron'];
                 }
-
                 if (target !== null) {
                     node.visible = target;
                 }
@@ -357,219 +215,175 @@
         function renderSpecification() {
             const container = document.getElementById('spec-list');
             container.innerHTML = '';
-            
-            // 1. Подсчет светлого лицевого
-            let lightWhole = 0, lightHalf = 0, lightEq = 0;
-            for (const [itemName, itemData] of Object.entries(specData["Лицевой светлый"])) {
-                const qty = itemData.qty;
-                const length = itemData.length;
-                if (length > 120) lightWhole += qty;
-                else lightHalf += qty;
-                lightEq += (length / BASE_KIRPICH) * qty;
+
+            if (!currentSpecData) {
+                container.innerHTML = `<div style="text-align:center; color:#888; padding:20px;">Спецификация не загружена для этого проекта.</div>`;
+                return;
             }
 
-            // 2. Подсчет темного лицевого
-            let darkWhole = 0, darkHalf = 0, darkEq = 0;
-            for (const [itemName, itemData] of Object.entries(specData["Лицевой тёмный"])) {
-                const qty = itemData.qty;
-                const length = itemData.length;
-                if (length > 120) darkWhole += qty;
-                else darkHalf += qty;
-                darkEq += (length / BASE_KIRPICH) * qty;
+            let lightWhole = 0, lightHalf = 0;
+            if (currentSpecData["Лицевой светлый"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой светлый"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) lightWhole += qty; else lightHalf += qty;
+                }
             }
-
-            // 3. Подсчет забутовки
-            let buildingWhole = 0, buildingHalf = 0, buildingEq = 0;
-            for (const [itemName, itemData] of Object.entries(specData["Забутовка"])) {
-                const qty = itemData.qty;
-                const length = itemData.length;
-                if (length > 120) buildingWhole += qty;
-                else buildingHalf += qty;
-                buildingEq += (length / BASE_KIRPICH) * qty;
+            let darkWhole = 0, darkHalf = 0;
+            if (currentSpecData["Лицевой тёмный"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой тёмный"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) darkWhole += qty; else darkHalf += qty;
+                }
             }
-
-            // 4. Подсчет шамота
-            let refractoryWhole = 0, refractoryHalf = 0, refractoryEq = 0;
-            for (const [itemName, itemData] of Object.entries(specData["Шамот"])) {
-                const qty = itemData.qty;
-                const length = itemData.length;
-                if (length > 124) refractoryWhole += qty;
-                else refractoryHalf += qty;
-                refractoryEq += (length / BASE_KIRPICH) * qty;
+            let buildingWhole = 0, buildingHalf = 0;
+            if (currentSpecData["Забутовка"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Забутовка"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) buildingWhole += qty; else buildingHalf += qty;
+                }
             }
-
-            // 5. Подсчет итогового целого кирпича (Половинки + Цельные, 2 половинки = 1 целый)
+            let refWhole = 0, refHalf = 0;
+            if (currentSpecData["Шамот"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Шамот"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 124) refWhole += qty; else refHalf += qty;
+                }
+            }
             const totalLight = Math.ceil(lightWhole + (lightHalf / 2));
             const totalDark = Math.ceil(darkWhole + (darkHalf / 2));
             const totalBuilding = Math.ceil(buildingWhole + (buildingHalf / 2));
-            const totalRefr = Math.ceil(refractoryWhole + (refractoryHalf / 2));
-
-            // 6. Детализация Литья
-            let metalHtml = '';
-            let metalTotal = 0;
-            for (const [itemName, itemData] of Object.entries(specData["Литье / Металл"])) {
-                metalTotal += itemData.qty;
-                metalHtml += `<div class="spec-line"><span>${itemName}</span><span>${itemData.qty} шт.</span></div>`;
+            const totalRef = Math.ceil(refWhole + (refHalf / 2));
+            
+            let metalHtml = '', metalTotal = 0;
+            if (currentSpecData["Литье / Металл"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Литье / Металл"])) {
+                    metalTotal += itemData.qty;
+                    metalHtml += `<div class="spec-line"><span>${itemName}</span><span>${itemData.qty} шт.</span></div>`;
+                }
             }
-
-            const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRefr;
-
+            const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRef;
+            
             container.innerHTML = `
-                <div class="spec-group">
-                    <h3>Лицевой светлый</h3>
-                    <div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div>
-                </div>
-
-                <div class="spec-group">
-                    <h3>Лицевой тёмный</h3>
-                    <div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div>
-                </div>
-
-                <div class="spec-group">
-                    <h3>Забутовка</h3>
-                    <div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div>
-                </div>
-
-                <div class="spec-group">
-                    <h3>Шамот (ШБ-8)</h3>
-                    <div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRefr} шт.</span></div>
-                </div>
-
-                <div class="spec-group" style="border: none; margin-bottom: 0;">
-                    <h3>Литье / Комплектующие</h3>
-                    ${metalHtml}
-                    <div class="spec-metal-total"><span>Итого:</span><span>${metalTotal} шт.</span></div>
-                </div>
-
-                <div class="grand-total">
-                    Общее количество кирпича (все виды): <span>${totalBricksOnly} шт.</span>
-                </div>
+                <div class="spec-group"><h3>Лицевой светлый</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div></div>
+                <div class="spec-group"><h3>Лицевой тёмный</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div></div>
+                <div class="spec-group"><h3>Забутовка</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div></div>
+                <div class="spec-group"><h3>Шамот (ШБ-8)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRef} шт.</span></div></div>
+                <div class="spec-group" style="border: none; margin-bottom: 0;"><h3>Литье / Комплектующие</h3>${metalHtml}<div class="spec-metal-total"><span>Итого:</span><span>${metalTotal} шт.</span></div></div>
+                <div class="grand-total">Общее количество кирпича (все виды): <span>${totalBricksOnly} шт.</span></div>
             `;
         }
 
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = null;
-            scene.environment = null;
-
+        function loadModel(blobUrl) {
+            scene = new THREE.Scene(); scene.background = null; scene.environment = null;
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
             resetCameraPosition();
-
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             document.body.appendChild(renderer.domElement);
-
             controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+            controls.enableDamping = true; controls.dampingFactor = 0.05;
 
             const rgbeloader = new RGBELoader();
-            rgbeloader.load(hdrPath, function (texture) {
+            rgbeloader.load('park.hdr', function (texture) {
                 texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.environment = texture;
-                scene.background = texture;
-            }, undefined, function (err) {
-                console.error('Ошибка загрузки HDRI:', err);
-                scene.background = new THREE.Color(0x222222);
-            });
+                scene.environment = texture; scene.background = texture;
+            }, undefined, function () { scene.background = new THREE.Color(0x222222); });
 
             const gltfLoader = new GLTFLoader();
-            gltfLoader.load(modelPath, function (gltf) {
+            gltfLoader.load(blobUrl, function (gltf) {
                 model = gltf.scene;
-                
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
-                model.position.sub(center);
-                model.position.y = 0; 
-                model.scale.set(1.3, 1.3, 1.3);
-
+                model.position.sub(center); model.position.y = 0; model.scale.set(1.3, 1.3, 1.3);
                 scene.add(model);
+                document.getElementById('access-screen').classList.add('hidden');
                 initInterfaceListeners();
-                updateVisibilityMatrix(); 
+                updateVisibilityMatrix();
             }, undefined, function (err) {
                 console.error('Ошибка загрузки модели:', err);
+                document.getElementById('error-msg').innerText = 'Ошибка загрузки модели. Проверьте файл.';
+                document.getElementById('error-msg').style.display = 'block';
+                document.getElementById('btn-unlock').innerText = 'Открыть';
             });
-
             window.addEventListener('resize', onWindowResize, false);
+            animate();
         }
 
-        function resetCameraPosition() {
-            camera.position.set(0, 2, 5);
-            if (controls) controls.target.set(0, 1, 0);
+        function handleAccessCode() {
+            const code = document.getElementById('access-code').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            if (!code) { errorMsg.style.display = 'block'; return; }
+            
+            errorMsg.style.display = 'none';
+            document.getElementById('btn-unlock').innerText = 'Проверка...';
+            
+            fetch('wc_auth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'code=' + encodeURIComponent(code)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка доступа');
+                
+                const rawTitle = response.headers.get('X-Project-Title');
+                const rawLogo = response.headers.get('X-Project-Logo');
+                const rawSpec = response.headers.get('X-Project-Spec');
+                
+                const title = rawTitle ? decodeURIComponent(rawTitle) : 'Проект печи';
+                const logo = rawLogo ? decodeURIComponent(rawLogo) : '';
+                const specPath = rawSpec ? decodeURIComponent(rawSpec) : null;
+
+                document.getElementById('project-title').innerText = title;
+                const logoImg = document.getElementById('project-logo');
+                if (logo) {
+                    logoImg.src = logo;
+                    logoImg.style.display = 'block';
+                } else {
+                    logoImg.style.display = 'none';
+                }
+                document.getElementById('branding').classList.add('active');
+
+                if (specPath) {
+                    return fetch(specPath + '?t=' + Date.now()).then(res => res.json()).then(specJson => {
+                        currentSpecData = specJson;
+                        return response.blob();
+                    });
+                } else {
+                    currentSpecData = null;
+                    return response.blob();
+                }
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                loadModel(url);
+                document.getElementById('btn-unlock').innerText = 'Открыть';
+            })
+            .catch(error => {
+                document.getElementById('btn-unlock').innerText = 'Открыть';
+                errorMsg.style.display = 'block';
+                console.error(error);
+            });
         }
 
+        function resetCameraPosition() { camera.position.set(0, 2, 5); if (controls) controls.target.set(0, 1, 0); }
         function initInterfaceListeners() {
-            document.getElementById('btn-next').addEventListener('click', () => {
-                if (currentRenderedRow < maxRows) {
-                    currentRenderedRow++;
-                    updateVisibilityMatrix();
-                    document.getElementById('row-slider').value = currentRenderedRow;
-                }
-            });
-
-            document.getElementById('btn-prev').addEventListener('click', () => {
-                if (currentRenderedRow > 1) {
-                    currentRenderedRow--;
-                    updateVisibilityMatrix();
-                    document.getElementById('row-slider').value = currentRenderedRow;
-                }
-            });
-
-            document.getElementById('btn-reset').addEventListener('click', () => {
-                resetCameraPosition();
-            });
-
-            document.getElementById('btn-spec').addEventListener('click', function() {
-                renderSpecification();
-                document.getElementById('modal-overlay').classList.add('open');
-            });
-
-            document.getElementById('modal-close').addEventListener('click', () => {
-                document.getElementById('modal-overlay').classList.remove('open');
-            });
-            document.getElementById('modal-overlay').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) {
-                    document.getElementById('modal-overlay').classList.remove('open');
-                }
-            });
-
-            document.getElementById('row-slider').addEventListener('input', function() {
-                const newRow = parseInt(this.value);
-                if (newRow !== currentRenderedRow) {
-                    currentRenderedRow = newRow;
-                    updateVisibilityMatrix();
-                }
-            });
-
-            document.querySelectorAll('.btn-toggle').forEach(button => {
-                button.addEventListener('click', function() {
-                    const layerName = this.getAttribute('data-layer');
-                    this.classList.toggle('active');
-                    activePalettes[layerName] = this.classList.contains('active');
-                    updateVisibilityMatrix();
-                });
-            });
-
-            document.getElementById('toggle-ui').addEventListener('click', function() {
-                document.getElementById('control-panel').classList.toggle('hidden');
-            });
+            document.getElementById('btn-next').addEventListener('click', () => { if (currentRenderedRow < maxRows) { currentRenderedRow++; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
+            document.getElementById('btn-prev').addEventListener('click', () => { if (currentRenderedRow > 1) { currentRenderedRow--; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
+            document.getElementById('btn-reset').addEventListener('click', resetCameraPosition);
+            document.getElementById('btn-spec').addEventListener('click', function() { renderSpecification(); document.getElementById('modal-overlay').classList.add('open'); });
+            document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
+            document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) { document.getElementById('modal-overlay').classList.remove('open'); } });
+            document.getElementById('row-slider').addEventListener('input', function() { const newRow = parseInt(this.value); if (newRow !== currentRenderedRow) { currentRenderedRow = newRow; updateVisibilityMatrix(); } });
+            document.querySelectorAll('.btn-toggle').forEach(button => { button.addEventListener('click', function() { const layerName = this.getAttribute('data-layer'); this.classList.toggle('active'); activePalettes[layerName] = this.classList.contains('active'); updateVisibilityMatrix(); }); });
+            document.getElementById('toggle-ui').addEventListener('click', function() { document.getElementById('control-panel').classList.toggle('hidden'); });
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        init();
-        animate();
+        document.getElementById('btn-unlock').addEventListener('click', handleAccessCode);
+        document.getElementById('access-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAccessCode(); });
     </script>
 </body>
 </html>
