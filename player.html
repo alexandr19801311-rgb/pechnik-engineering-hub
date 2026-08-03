@@ -128,12 +128,22 @@
     </div>
 
     <div id="modal-overlay">
-        <div id="modal-content">
-            <span id="modal-close">&times;</span>
-            <h2>Спецификация материалов</h2>
-            <div id="spec-list"></div>
-        </div>
+<div id="modal-content">
+    <span id="modal-close">&times;</span>
+    
+    <!-- НОВАЯ ШАПКА МОДАЛЬНОГО ОКНА -->
+    <div class="modal-header" style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #ff6b00; padding-bottom: 10px; margin-bottom: 15px;">
+        <img id="modal-project-logo" src="" style="height: 26px; width: auto; display: none;" onerror="this.style.display='none'">
+        <h2 style="margin:0; font-size:20px; border-bottom:none; padding-bottom:0; display:flex; align-items:center;">
+            Спецификация материалов 
+            <span style="color:#888; font-weight:400; margin-left:10px;">—</span> 
+            <span id="modal-project-title" style="font-weight:400; color:#ff6b00;">Проект</span>
+        </h2>
     </div>
+    <!-- ------------------------- -->
+
+    <div id="spec-list"></div>
+</div>
 
     <script type="module">
         import * as THREE from 'three';
@@ -324,7 +334,6 @@ function renderSpecification() {
 
         ${metalHtml}
         
-        <div class="spec-metal-total"><span>Общее количество элементов (литье и металл):</span><span>${metalTotal} шт.</span></div>
         <div class="grand-total">Общее количество кирпича (все виды): <span>${totalBricksOnly} шт.</span></div>
     `;
 }
@@ -427,8 +436,27 @@ function renderSpecification() {
             document.getElementById('btn-next').addEventListener('click', () => { if (currentRenderedRow < maxRows) { currentRenderedRow++; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
             document.getElementById('btn-prev').addEventListener('click', () => { if (currentRenderedRow > 1) { currentRenderedRow--; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
             document.getElementById('btn-reset').addEventListener('click', resetCameraPosition);
-            document.getElementById('btn-spec').addEventListener('click', function() { renderSpecification(); document.getElementById('modal-overlay').classList.add('open'); });
-            document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
+document.getElementById('btn-spec').addEventListener('click', function() {
+    // Синхронизируем заголовок и логотип модального окна с основной шапкой
+    const modalLogo = document.getElementById('modal-project-logo');
+    const mainLogo = document.getElementById('project-logo');
+    
+    const modalTitle = document.getElementById('modal-project-title');
+    const mainTitle = document.getElementById('project-title');
+
+    if (modalTitle && mainTitle) {
+        modalTitle.innerText = mainTitle.innerText;
+    }
+    
+    // Перекладываем логотип (если он есть)
+    if (modalLogo && mainLogo && mainLogo.src) {
+        modalLogo.src = mainLogo.src;
+        modalLogo.style.display = mainLogo.style.display || 'block';
+    }
+
+    renderSpecification();
+    document.getElementById('modal-overlay').classList.add('open');
+});            document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
             document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) { document.getElementById('modal-overlay').classList.remove('open'); } });
             document.getElementById('row-slider').addEventListener('input', function() { const newRow = parseInt(this.value); if (newRow !== currentRenderedRow) { currentRenderedRow = newRow; updateVisibilityMatrix(); } });
             document.querySelectorAll('.btn-toggle').forEach(button => { button.addEventListener('click', function() { const layerName = this.getAttribute('data-layer'); this.classList.toggle('active'); activePalettes[layerName] = this.classList.contains('active'); updateVisibilityMatrix(); }); });
