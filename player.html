@@ -322,13 +322,13 @@ function renderSpecification() {
     const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRef;
     
     container.innerHTML = `
-        <div class="spec-group"><h3>Лицевой светлый</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div></div>
-        <div class="spec-group"><h3>Лицевой тёмный</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div></div>
-        <div class="spec-group"><h3>Забутовка</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div></div>
-        <div class="spec-group"><h3>Шамот (ШБ-8)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRef} шт.</span></div></div>
+        <div class="spec-group"><h3>Лицевой светлый формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div></div>
+        <div class="spec-group"><h3>Лицевой тёмный формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div></div>
+        <div class="spec-group"><h3>Строительный полнотелый М150 (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div></div>
+        <div class="spec-group"><h3>Огнеупорный ШБ-8 (250*124*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRef} шт.</span></div></div>
         
         <div class="spec-group"><h3>Расход кладочных смесей</h3>
-            <div class="spec-line"><span>Глиняно-песчаная смесь (лицевой, забутовка):</span><span>${clayMortar} кг</span></div>
+            <div class="spec-line"><span>Цементно-песчаная смесь М150 (лицевой, забутовка):</span><span>${clayMortar} кг</span></div>
             <div class="spec-line"><span>Огнеупорный мертель (шамот):</span><span>${refractoryMortar} кг</span></div>
         </div>
 
