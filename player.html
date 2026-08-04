@@ -40,27 +40,79 @@
         .input-group button:active { background: #e05e00; }
         #error-msg { color: #ff4d4d; font-size: 14px; margin-top: 15px; display: none; }
 
-        #ui-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-        #control-panel { background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); padding: 14px 18px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 12px; transition: all 0.25s; width: auto; min-width: 280px; opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible; }
-        #control-panel.hidden { opacity: 0; transform: scale(0.9) translateY(15px); pointer-events: none; visibility: hidden; }
-        .fab-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); color: #fff; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        /* ===== НАВИГАЦИЯ: МИНИМАЛЬНАЯ ВЕРТИКАЛЬНАЯ ПАНЕЛЬ ===== */
+        #ui-container { 
+            position: absolute;
+            top: 50%; right: 20px; left: auto; bottom: auto;
+            transform: translateY(-50%);
+            z-index: 10;
+            display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+        }
+        #control-panel { 
+            background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.08); padding: 16px 12px; 
+            border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); 
+            display: flex; flex-direction: column; align-items: flex-end; gap: 8px; /* Все кнопки прижаты к правому краю */
+            transition: all 0.25s; width: auto;
+            opacity: 1; transform: scale(1); pointer-events: auto; visibility: visible; 
+        }
+        #control-panel.hidden { 
+            opacity: 0; transform: scale(0.9) translateY(15px); pointer-events: none; visibility: hidden; 
+        }
+        .fab-btn { 
+            width: 34px; height: 34px; border-radius: 50%; border: none; 
+            background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(12px); color: #fff; 
+            font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            display: flex; align-items: center; justify-content: center; transition: transform 0.2s; 
+        }
         .fab-btn:active { transform: scale(0.9); }
-        .info-row { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 16px; font-weight: 600; }
-        .row-counter { background: #ff6b00; padding: 2px 10px; border-radius: 16px; font-size: 13px; }
-        .buttons-row { display: flex; gap: 8px; width: 100%; }
-        .btn { flex: 1; height: 48px; border: none; background: #2a2a2a; color: #fff; font-size: 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .btn:active { background: #444; }
-        .btn-main { background: #ff6b00; }
-        .btn-main:active { background: #e05e00; }
-        .btn-accent { background: #28a745; font-size: 18px; }
-        .btn-accent:active { background: #1e8a37; }
-        .slider-row { width: 100%; padding: 0 4px; }
-        input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: #444; border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #ff6b00; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #ff6b00; cursor: pointer; border: 2px solid #fff; }
-        .palettes-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-        .btn-toggle { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-weight: 500; }
+        
+        .info-row { color: #fff; font-size: 14px; font-weight: 600; width: 100%; text-align: center; margin-bottom: 4px; }
+        
+        /* ===== ВЕРТИКАЛЬНЫЙ ПОЛЗУНОК ===== */
+        .slider-row {
+            width: 36px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 4px 0;
+        }
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            width: 120px; height: 4px;
+            background: #444; border-radius: 2px; outline: none;
+            transform: rotate(-90deg); /* Поворачиваем слайдер вертикально */
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #ff6b00; cursor: pointer;
+            border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #ff6b00; cursor: pointer; border: 2px solid #fff;
+        }
+        
+        /* ===== МИНИМАЛЬНЫЕ КВАДРАТНЫЕ КНОПКИ (ПРИЖАТЫ ВПРАВО) ===== */
+        .btn { 
+            width: 40px; height: 40px; padding: 0; border: none; border-radius: 8px; 
+            background: #2a2a2a; color: #fff; font-size: 20px; cursor: pointer; 
+            display: flex; justify-content: center; align-items: center; 
+            transition: background 0.2s; 
+        }
+        .btn:hover { background: #3a3a3a; }
+        .btn:active { transform: scale(0.9); }
+        
+        .btn-spec { width: 40px; height: 40px; padding: 0; border: none; border-radius: 8px; background: #ff6b00; color: #fff; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
+        .btn-spec:hover { background: #e05e00; }
+        .btn-spec:active { transform: scale(0.9); }
+        
+        .btn-toggle { width: 40px; height: 40px; padding: 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #ccc; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
+        .btn-toggle:hover { border-color: #666; }
         .btn-toggle.active { background: #28a745; color: #fff; border-color: #28a745; }
+        
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 100; display: none; justify-content: center; align-items: center; }
         #modal-overlay.open { display: flex; }
         #modal-content { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; width: 90%; max-width: 700px; max-height: 80vh; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow-y: auto; color: #fff; position: relative; }
@@ -71,7 +123,6 @@
         .spec-group h3 { color: #28a745; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 4px; }
         .spec-line { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; color: #ccc; }
         .spec-line span:last-child { color: #fff; font-weight: bold; }
-        .spec-metal-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #555; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; color: #ff6b00; }
         .grand-total { margin-top: 20px; padding-top: 15px; border-top: 3px double #444; text-align: right; font-size: 17px; font-weight: bold; color: #ff6b00; }
         .grand-total span { color: #fff; font-weight: normal; }
     </style>
@@ -103,47 +154,56 @@
     </div>
 
     <div id="ui-container">
+        <!-- Кнопка сворачивания панели -->
         <button class="fab-btn" id="toggle-ui">⌃</button>
+        
         <div id="control-panel">
+            <!-- Только цифры ряда -->
             <div class="info-row">
-                <span>Порядовка</span>
-                <span class="row-counter">Ряд: <span id="current-row-txt">54</span>/54</span>
+                <span id="current-row-txt">54</span>/54
             </div>
-            <div class="buttons-row">
-                <button class="btn" id="btn-prev">◀</button>
-                <button class="btn" id="btn-reset" title="Сбросить камеру">🏠</button>
-                <button class="btn btn-main" id="btn-next">▶</button>
-                <button class="btn btn-accent" id="btn-spec" title="Смета материалов">📋</button>
-            </div>
+
+            <!-- Вертикальный ползунок -->
             <div class="slider-row">
                 <input type="range" id="row-slider" min="1" max="54" value="54">
             </div>
-            <div class="palettes-row">
-                <button class="btn-toggle active" data-layer="palette_brick_facade">Лицевой</button>
-                <button class="btn-toggle active" data-layer="palette_brick_building">Забутовка</button>
-                <button class="btn-toggle active" data-layer="palette_brick_refractory">Шамот</button>
-                <button class="btn-toggle active" data-layer="palette_iron">Литье</button>
-            </div>
+
+            <!-- Кнопки навигации (+ и -) -->
+            <button class="btn" id="btn-plus">+</button>
+            <button class="btn" id="btn-minus">−</button>
+            <button class="btn" id="btn-reset">🏠</button>
+
+            <hr style="width: 100%; border:none; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
+
+            <!-- Палитры материалов (обновленные иконки) -->
+            <button class="btn-toggle active" data-layer="palette_brick_facade">🧱</button>
+            <button class="btn-toggle active" data-layer="palette_brick_building">📐</button>
+            <button class="btn-toggle active" data-layer="palette_brick_refractory">🔥</button>
+            <button class="btn-toggle active" data-layer="palette_iron">🔧</button>
+
+            <hr style="width: 100%; border:none; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
+
+            <!-- Спецификация -->
+            <button class="btn-spec" id="btn-spec">📋</button>
         </div>
     </div>
 
     <div id="modal-overlay">
-<div id="modal-content">
-    <span id="modal-close">&times;</span>
-    
-    <!-- НОВАЯ ШАПКА МОДАЛЬНОГО ОКНА -->
-    <div class="modal-header" style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #ff6b00; padding-bottom: 10px; margin-bottom: 15px;">
-        <img id="modal-project-logo" src="" style="height: 26px; width: auto; display: none;" onerror="this.style.display='none'">
-        <h2 style="margin:0; font-size:20px; border-bottom:none; padding-bottom:0; display:flex; align-items:center;">
-            Спецификация материалов 
-            <span style="color:#888; font-weight:400; margin-left:10px;">—</span> 
-            <span id="modal-project-title" style="font-weight:400; color:#ff6b00;">Проект</span>
-        </h2>
-    </div>
-    <!-- ------------------------- -->
+        <div id="modal-content">
+            <span id="modal-close">&times;</span>
+            
+            <div class="modal-header" style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #ff6b00; padding-bottom: 10px; margin-bottom: 15px;">
+                <img id="modal-project-logo" src="" style="height: 26px; width: auto; display: none;" onerror="this.style.display='none'">
+                <h2 style="margin:0; font-size:20px; border-bottom:none; padding-bottom:0; display:flex; align-items:center;">
+                    Спецификация материалов 
+                    <span style="color:#888; font-weight:400; margin-left:10px;">—</span> 
+                    <span id="modal-project-title" style="font-weight:400; color:#ff6b00;">Проект</span>
+                </h2>
+            </div>
 
-    <div id="spec-list"></div>
-</div>
+            <div id="spec-list"></div>
+        </div>
+    </div>
 
     <script type="module">
         import * as THREE from 'three';
@@ -222,127 +282,123 @@
             });
         }
 
-function renderSpecification() {
-    const container = document.getElementById('spec-list');
-    container.innerHTML = '';
+        function renderSpecification() {
+            const container = document.getElementById('spec-list');
+            container.innerHTML = '';
 
-    if (!currentSpecData) {
-        container.innerHTML = `<div style="text-align:center; color:#888; padding:20px;">Спецификация не загружена для этого проекта.</div>`;
-        return;
-    }
-
-    let lightWhole = 0, lightHalf = 0;
-    if (currentSpecData["Лицевой светлый"]) {
-        for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой светлый"])) {
-            const qty = itemData.qty, length = itemData.length;
-            if (length > 120) lightWhole += qty; else lightHalf += qty;
-        }
-    }
-    let darkWhole = 0, darkHalf = 0;
-    if (currentSpecData["Лицевой тёмный"]) {
-        for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой тёмный"])) {
-            const qty = itemData.qty, length = itemData.length;
-            if (length > 120) darkWhole += qty; else darkHalf += qty;
-        }
-    }
-    let buildingWhole = 0, buildingHalf = 0;
-    if (currentSpecData["Забутовка"]) {
-        for (const [itemName, itemData] of Object.entries(currentSpecData["Забутовка"])) {
-            const qty = itemData.qty, length = itemData.length;
-            if (length > 120) buildingWhole += qty; else buildingHalf += qty;
-        }
-    }
-    let refWhole = 0, refHalf = 0;
-    if (currentSpecData["Шамот"]) {
-        for (const [itemName, itemData] of Object.entries(currentSpecData["Шамот"])) {
-            const qty = itemData.qty, length = itemData.length;
-            if (length > 124) refWhole += qty; else refHalf += qty;
-        }
-    }
-    
-    const totalLight = Math.ceil(lightWhole + (lightHalf / 2));
-    const totalDark = Math.ceil(darkWhole + (darkHalf / 2));
-    const totalBuilding = Math.ceil(buildingWhole + (buildingHalf / 2));
-    const totalRef = Math.ceil(refWhole + (refHalf / 2));
-    
-    // Расчет раствора
-    const totalRedBricks = totalLight + totalDark + totalBuilding;
-    const clayMortar = Math.round(totalRedBricks * 1.1);
-    const refractoryMortar = Math.round(totalRef * 0.6);
-    
-    // --- НОВЫЙ БЛОК: РАЗДЕЛЕНИЕ ЛИТЬЯ ПО ГРУППАМ ---
-    let metalHtml = '';
-    let metalTotal = 0;
-    
-    if (currentSpecData["Литье / Металл"]) {
-        // Создаем контейнеры для групп
-        const metalGroups = {
-            "Метизы и крепеж": [],
-            "Печное литье и фурнитура": [],
-            "Дымоходы, изоляция и тоннели": [],
-            "Металлоконструкции (профили, уголки)": [],
-            "Прочее": []
-        };
-
-        for (const [itemName, itemData] of Object.entries(currentSpecData["Литье / Металл"])) {
-            metalTotal += itemData.qty;
-            const lowerName = itemName.toLowerCase();
-
-            // Распределяем по смысловым группам на основе содержащихся слов
-            if (lowerName.includes('гайка') || lowerName.includes('шайба') || lowerName.includes('шпилька') || lowerName.includes('болт')) {
-                metalGroups["Метизы и крепеж"].push({name: itemName, qty: itemData.qty});
-            } 
-            else if (lowerName.includes('дверц') || lowerName.includes('колосник') || lowerName.includes('плита') || lowerName.includes('мойка') || lowerName.includes('шибер') || lowerName.includes('подсветка')) {
-                metalGroups["Печное литье и фурнитура"].push({name: itemName, qty: itemData.qty});
+            if (!currentSpecData) {
+                container.innerHTML = `<div style="text-align:center; color:#888; padding:20px;">Спецификация не загружена для этого проекта.</div>`;
+                return;
             }
-            else if (lowerName.includes('труб') || lowerName.includes('отвод') || lowerName.includes('базальт') || lowerName.includes('картон') || lowerName.includes('тоннель') || lowerName.includes('шнур')) {
-                metalGroups["Дымоходы, изоляция и тоннели"].push({name: itemName, qty: itemData.qty});
-            }
-            else if (lowerName.includes('уголок') || lowerName.includes('подвес') || lowerName.includes('профиль')) {
-                metalGroups["Металлоконструкции (профили, уголки)"].push({name: itemName, qty: itemData.qty});
-            } else {
-                metalGroups["Прочее"].push({name: itemName, qty: itemData.qty});
-            }
-        }
 
-        // Генерируем HTML для каждой непустой группы
-        for (const [groupName, items] of Object.entries(metalGroups)) {
-            if (items.length > 0) {
-                let groupHtml = `<div class="spec-group"><h3>${groupName}</h3>`;
-                for (const item of items) {
-                    groupHtml += `<div class="spec-line"><span>${item.name}</span><span>${item.qty} шт.</span></div>`;
+            let lightWhole = 0, lightHalf = 0;
+            if (currentSpecData["Лицевой светлый"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой светлый"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) lightWhole += qty; else lightHalf += qty;
                 }
-                groupHtml += `</div>`;
-                metalHtml += groupHtml;
             }
+            let darkWhole = 0, darkHalf = 0;
+            if (currentSpecData["Лицевой тёмный"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой тёмный"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) darkWhole += qty; else darkHalf += qty;
+                }
+            }
+            let buildingWhole = 0, buildingHalf = 0;
+            if (currentSpecData["Забутовка"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Забутовка"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 120) buildingWhole += qty; else buildingHalf += qty;
+                }
+            }
+            let refWhole = 0, refHalf = 0;
+            if (currentSpecData["Шамот"]) {
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Шамот"])) {
+                    const qty = itemData.qty, length = itemData.length;
+                    if (length > 124) refWhole += qty; else refHalf += qty;
+                }
+            }
+            
+            const totalLight = Math.ceil(lightWhole + (lightHalf / 2));
+            const totalDark = Math.ceil(darkWhole + (darkHalf / 2));
+            const totalBuilding = Math.ceil(buildingWhole + (buildingHalf / 2));
+            const totalRef = Math.ceil(refWhole + (refHalf / 2));
+            
+            // Расчет раствора
+            const totalRedBricks = totalLight + totalDark + totalBuilding;
+            const clayMortar = Math.round(totalRedBricks * 1.1);
+            const refractoryMortar = Math.round(totalRef * 0.6);
+            
+            // РАЗДЕЛЕНИЕ ЛИТЬЯ ПО ГРУППАМ
+            let metalHtml = '';
+            let metalTotal = 0;
+            
+            if (currentSpecData["Литье / Металл"]) {
+                const metalGroups = {
+                    "Метизы и крепеж": [],
+                    "Печное литье и фурнитура": [],
+                    "Дымоходы, изоляция и тоннели": [],
+                    "Металлоконструкции (профили, уголки)": [],
+                    "Прочее": []
+                };
+
+                for (const [itemName, itemData] of Object.entries(currentSpecData["Литье / Металл"])) {
+                    metalTotal += itemData.qty;
+                    const lowerName = itemName.toLowerCase();
+
+                    if (lowerName.includes('гайка') || lowerName.includes('шайба') || lowerName.includes('шпилька') || lowerName.includes('болт')) {
+                        metalGroups["Метизы и крепеж"].push({name: itemName, qty: itemData.qty});
+                    } 
+                    else if (lowerName.includes('дверц') || lowerName.includes('колосник') || lowerName.includes('плита') || lowerName.includes('мойка') || lowerName.includes('шибер') || lowerName.includes('подсветка')) {
+                        metalGroups["Печное литье и фурнитура"].push({name: itemName, qty: itemData.qty});
+                    }
+                    else if (lowerName.includes('труб') || lowerName.includes('отвод') || lowerName.includes('базальт') || lowerName.includes('картон') || lowerName.includes('тоннель') || lowerName.includes('шнур')) {
+                        metalGroups["Дымоходы, изоляция и тоннели"].push({name: itemName, qty: itemData.qty});
+                    }
+                    else if (lowerName.includes('уголок') || lowerName.includes('подвес') || lowerName.includes('профиль')) {
+                        metalGroups["Металлоконструкции (профили, уголки)"].push({name: itemName, qty: itemData.qty});
+                    } else {
+                        metalGroups["Прочее"].push({name: itemName, qty: itemData.qty});
+                    }
+                }
+
+                for (const [groupName, items] of Object.entries(metalGroups)) {
+                    if (items.length > 0) {
+                        let groupHtml = `<div class="spec-group"><h3>${groupName}</h3>`;
+                        for (const item of items) {
+                            groupHtml += `<div class="spec-line"><span>${item.name}</span><span>${item.qty} шт.</span></div>`;
+                        }
+                        groupHtml += `</div>`;
+                        metalHtml += groupHtml;
+                    }
+                }
+            }
+
+            const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRef;
+            
+            container.innerHTML = `
+                <div class="spec-group"><h3>Лицевой светлый формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div></div>
+                <div class="spec-group"><h3>Лицевой тёмный формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div></div>
+                <div class="spec-group"><h3>Строительный полнотелый М150 (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div></div>
+                <div class="spec-group"><h3>Огнеупорный ШБ-8 (250*124*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRef} шт.</span></div></div>
+                
+                <div class="spec-group"><h3>Расход кладочных смесей</h3>
+                    <div class="spec-line"><span>Цементно-песчаная смесь М150 (лицевой, забутовка):</span><span>${clayMortar} кг</span></div>
+                    <div class="spec-line"><span>Огнеупорный мертель (шамот):</span><span>${refractoryMortar} кг</span></div>
+                </div>
+
+                ${metalHtml}
+                
+                <div class="grand-total">Общее количество кирпича (все виды): <span>${totalBricksOnly} шт.</span></div>
+            `;
         }
-    }
-    // -------------------------------------------------
-
-    const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRef;
-    
-    container.innerHTML = `
-        <div class="spec-group"><h3>Лицевой светлый формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalLight} шт.</span></div></div>
-        <div class="spec-group"><h3>Лицевой тёмный формат 1нф (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalDark} шт.</span></div></div>
-        <div class="spec-group"><h3>Строительный полнотелый М150 (250*120*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalBuilding} шт.</span></div></div>
-        <div class="spec-group"><h3>Огнеупорный ШБ-8 (250*124*65 мм)</h3><div class="spec-line"><span>Итого целых кирпичей:</span><span>${totalRef} шт.</span></div></div>
-        
-        <div class="spec-group"><h3>Расход кладочных смесей</h3>
-            <div class="spec-line"><span>Цементно-песчаная смесь М150 (лицевой, забутовка):</span><span>${clayMortar} кг</span></div>
-            <div class="spec-line"><span>Огнеупорный мертель (шамот):</span><span>${refractoryMortar} кг</span></div>
-        </div>
-
-        ${metalHtml}
-        
-        <div class="grand-total">Общее количество кирпича (все виды): <span>${totalBricksOnly} шт.</span></div>
-    `;
-}
 
         function loadModel(blobUrl) {
             scene = new THREE.Scene(); scene.background = null; scene.environment = null;
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
             resetCameraPosition();
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             document.body.appendChild(renderer.domElement);
@@ -433,30 +489,41 @@ function renderSpecification() {
 
         function resetCameraPosition() { camera.position.set(0, 2, 5); if (controls) controls.target.set(0, 1, 0); }
         function initInterfaceListeners() {
-            document.getElementById('btn-next').addEventListener('click', () => { if (currentRenderedRow < maxRows) { currentRenderedRow++; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
-            document.getElementById('btn-prev').addEventListener('click', () => { if (currentRenderedRow > 1) { currentRenderedRow--; updateVisibilityMatrix(); document.getElementById('row-slider').value = currentRenderedRow; } });
+            // Кнопка + (увеличить ряд)
+            document.getElementById('btn-plus').addEventListener('click', () => { 
+                if (currentRenderedRow < maxRows) { 
+                    currentRenderedRow++; 
+                    updateVisibilityMatrix(); 
+                    document.getElementById('row-slider').value = currentRenderedRow; 
+                } 
+            });
+            // Кнопка - (убавить ряд)
+            document.getElementById('btn-minus').addEventListener('click', () => { 
+                if (currentRenderedRow > 1) { 
+                    currentRenderedRow--; 
+                    updateVisibilityMatrix(); 
+                    document.getElementById('row-slider').value = currentRenderedRow; 
+                } 
+            });
             document.getElementById('btn-reset').addEventListener('click', resetCameraPosition);
-document.getElementById('btn-spec').addEventListener('click', function() {
-    // Синхронизируем заголовок и логотип модального окна с основной шапкой
-    const modalLogo = document.getElementById('modal-project-logo');
-    const mainLogo = document.getElementById('project-logo');
-    
-    const modalTitle = document.getElementById('modal-project-title');
-    const mainTitle = document.getElementById('project-title');
+            document.getElementById('btn-spec').addEventListener('click', function() {
+                const modalLogo = document.getElementById('modal-project-logo');
+                const mainLogo = document.getElementById('project-logo');
+                const modalTitle = document.getElementById('modal-project-title');
+                const mainTitle = document.getElementById('project-title');
 
-    if (modalTitle && mainTitle) {
-        modalTitle.innerText = mainTitle.innerText;
-    }
-    
-    // Перекладываем логотип (если он есть)
-    if (modalLogo && mainLogo && mainLogo.src) {
-        modalLogo.src = mainLogo.src;
-        modalLogo.style.display = mainLogo.style.display || 'block';
-    }
+                if (modalTitle && mainTitle) {
+                    modalTitle.innerText = mainTitle.innerText;
+                }
+                if (modalLogo && mainLogo && mainLogo.src) {
+                    modalLogo.src = mainLogo.src;
+                    modalLogo.style.display = mainLogo.style.display || 'block';
+                }
 
-    renderSpecification();
-    document.getElementById('modal-overlay').classList.add('open');
-});            document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
+                renderSpecification();
+                document.getElementById('modal-overlay').classList.add('open');
+            });            
+            document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
             document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) { document.getElementById('modal-overlay').classList.remove('open'); } });
             document.getElementById('row-slider').addEventListener('input', function() { const newRow = parseInt(this.value); if (newRow !== currentRenderedRow) { currentRenderedRow = newRow; updateVisibilityMatrix(); } });
             document.querySelectorAll('.btn-toggle').forEach(button => { button.addEventListener('click', function() { const layerName = this.getAttribute('data-layer'); this.classList.toggle('active'); activePalettes[layerName] = this.classList.contains('active'); updateVisibilityMatrix(); }); });
