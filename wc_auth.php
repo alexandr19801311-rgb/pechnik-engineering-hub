@@ -47,7 +47,7 @@ if (!file_exists($model_file)) {
     exit;
 }
 
-// Отдаём GLB-файл с нужными заголовками (используем rawurlencode вместо urlencode, чтобы пробелы превращались в %20)
+// Отдаём GLB-файл с нужными заголовками
 header('Content-Type: application/octet-stream');
 header('Content-Disposition: attachment; filename="' . basename($model_file) . '"');
 header('Content-Length: ' . filesize($model_file));
@@ -55,6 +55,7 @@ header('Content-Length: ' . filesize($model_file));
 header('X-Project-Title: ' . rawurlencode($project['title'] ?? 'Проект'));
 header('X-Project-Logo: ' . rawurlencode($project['logo'] ?? ''));
 header('X-Project-Spec: ' . rawurlencode($project['spec'] ?? ''));
+header('X-Project-Tech: ' . rawurlencode($project['tech'] ?? '')); // ← ВОТ ЭТА СТРОКА ОБЯЗАТЕЛЬНО ДОЛЖНА БЫТЬ
 
 readfile($model_file);
 exit;
