@@ -109,10 +109,17 @@
         .btn-spec:hover { background: #e05e00; }
         .btn-spec:active { transform: scale(0.9); }
         
-        .btn-toggle, .btn-camera { width: 40px; height: 40px; padding: 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #ccc; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
-        .btn-toggle:hover, .btn-camera:hover { border-color: #666; }
+        .btn-toggle, .btn-camera, .btn-tech { 
+            width: 40px; height: 40px; padding: 0; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(255,255,255,0.05); 
+            color: #ccc; font-size: 20px; cursor: pointer; 
+            display: flex; justify-content: center; align-items: center; 
+            transition: all 0.2s; 
+        }
+        .btn-toggle:hover, .btn-camera:hover, .btn-tech:hover { border-color: #666; }
         .btn-toggle.active { background: #28a745; color: #fff; border-color: #28a745; }
-        .btn-camera:active { background: #2a2a2a; transform: scale(0.9); }
+        .btn-camera:active, .btn-tech:active { background: #2a2a2a; transform: scale(0.9); }
 
         /* ===== МОДАЛЬНОЕ ОКНО ===== */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 100; display: none; justify-content: center; align-items: center; }
@@ -187,8 +194,11 @@
 
             <hr style="width: 100%; border:none; border-top:1px solid rgba(255,255,255,0.1); margin: 6px 0;">
 
-            <!-- ФИЧА №5: Кнопка скриншота -->
+            <!-- Кнопка скриншота -->
             <button class="btn-camera" id="btn-screenshot" title="Скачать скриншот">📷</button>
+            
+            <!-- Кнопка технических характеристик -->
+            <button class="btn-tech" id="btn-tech" title="Технические характеристики">📄</button>
 
             <!-- Спецификация -->
             <button class="btn-spec" id="btn-spec">📋</button>
@@ -202,7 +212,8 @@
             <div class="modal-header" style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #ff6b00; padding-bottom: 10px; margin-bottom: 15px;">
                 <img id="modal-project-logo" src="" style="height: 26px; width: auto; display: none;" onerror="this.style.display='none'">
                 <h2 style="margin:0; font-size:20px; border-bottom:none; padding-bottom:0; display:flex; align-items:center;">
-                    Спецификация материалов 
+                    <!-- Разделили заголовок и название проекта -->
+                    <span id="modal-title-text">Спецификация материалов</span>
                     <span style="color:#888; font-weight:400; margin-left:10px;">—</span> 
                     <span id="modal-project-title" style="font-weight:400; color:#ff6b00;">Проект</span>
                 </h2>
@@ -232,6 +243,7 @@
         };
 
         let currentSpecData = null;
+        let currentTechPath = null; // путь к техническому файлу
 
         function updateVisibilityMatrix() {
             if (!model) return;
@@ -401,30 +413,54 @@
         }
 
         // =========================================================================
-        // ФИЧА №5: ЭКСПОРТ СКРИНШОТА (PNG)
+        // КНОПКА ТЕХНИЧЕСКИХ ХАРАКТЕРИСТИК
         // =========================================================================
-        function takeScreenshot() {
-            if (!model || !renderer) return;
+        function loadTechnicalNotes() {
+            const container = document.getElementById('spec-list');
+            const titleText = document.getElementById('modal-title-text');
 
-            const canvas = renderer.domElement;
-            // Получаем данные изображения в формате PNG
-            const dataURL = canvas.toDataURL('image/png');
+            if (!currentTechPath) {
+                container.innerHTML = `
+                    <div style="text-align:center; color:#888; padding:30px;">
+                        Для этого проекта технические характеристики не загружены.
+                    </div>
+                `;
+                if (titleText) titleText.innerText = 'Технические характеристики';
+                document.getElementById('modal-overlay').classList.add('open');
+                return;
+            }
 
-            // Формируем имя файла (берем название проекта и текущий ряд)
-            const projectTitle = document.getElementById('project-title').innerText || 'Проект';
-            const currentRow = document.getElementById('current-row-txt').innerText || '0';
-            
-            // Чистим название от недопустимых символов в имени файла
-            const safeTitle = projectTitle.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
-            const fileName = `Проект_${safeTitle}_Ряд_${currentRow}.png`;
+            fetch(currentTechPath + '?t=' + Date.now())
+                .then(response => {
+                    if (!response.ok) throw new Error('Файл не найден');
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    const modalLogo = document.getElementById('modal-project-logo');
+                    const mainLogo = document.getElementById('project-logo');
+                    const modalTitle = document.getElementById('modal-project-title');
+                    const mainTitle = document.getElementById('project-title');
 
-            // Создаем невидимую ссылку для скачивания
-            const link = document.createElement('a');
-            link.href = dataURL;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                    if (modalTitle && mainTitle) modalTitle.innerText = mainTitle.innerText;
+                    if (modalLogo && mainLogo && mainLogo.src) {
+                        modalLogo.src = mainLogo.src;
+                        modalLogo.style.display = mainLogo.style.display || 'block';
+                    }
+
+                    if (titleText) titleText.innerText = 'Технические характеристики';
+                    container.innerHTML = htmlContent;
+                    document.getElementById('modal-overlay').classList.add('open');
+                })
+                .catch(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; color:#ff4d4d; padding:20px;">
+                            Не удалось загрузить технические данные для этого проекта.<br>
+                            Проверьте, что файл <b>${currentTechPath}</b> существует на сервере.
+                        </div>
+                    `;
+                    if (titleText) titleText.innerText = 'Технические характеристики';
+                    document.getElementById('modal-overlay').classList.add('open');
+                });
         }
         // =========================================================================
 
@@ -485,10 +521,12 @@
                 const rawTitle = response.headers.get('X-Project-Title');
                 const rawLogo = response.headers.get('X-Project-Logo');
                 const rawSpec = response.headers.get('X-Project-Spec');
+                const rawTech = response.headers.get('X-Project-Tech'); // Новый заголовок
                 
                 const title = rawTitle ? decodeURIComponent(rawTitle) : 'Проект печи';
                 const logo = rawLogo ? decodeURIComponent(rawLogo) : '';
                 const specPath = rawSpec ? decodeURIComponent(rawSpec) : null;
+                const techPath = rawTech ? decodeURIComponent(rawTech) : null;
 
                 document.getElementById('project-title').innerText = title;
                 const logoImg = document.getElementById('project-logo');
@@ -499,6 +537,9 @@
                     logoImg.style.display = 'none';
                 }
                 document.getElementById('branding').classList.add('active');
+
+                // Сохраняем путь к техническому файлу
+                currentTechPath = techPath;
 
                 if (specPath) {
                     return fetch(specPath + '?t=' + Date.now()).then(res => res.json()).then(specJson => {
@@ -542,21 +583,39 @@
             document.getElementById('btn-reset').addEventListener('click', resetCameraPosition);
             
             // Кнопка скриншота
-            document.getElementById('btn-screenshot').addEventListener('click', takeScreenshot);
+            document.getElementById('btn-screenshot').addEventListener('click', function() {
+                if (!model || !renderer) return;
+                const canvas = renderer.domElement;
+                const dataURL = canvas.toDataURL('image/png');
+                const projectTitle = document.getElementById('project-title').innerText || 'Проект';
+                const currentRow = document.getElementById('current-row-txt').innerText || '0';
+                const safeTitle = projectTitle.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
+                const fileName = `Проект_${safeTitle}_Ряд_${currentRow}.png`;
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
 
+            // Кнопка технических характеристик
+            document.getElementById('btn-tech').addEventListener('click', loadTechnicalNotes);
+
+            // Кнопка спецификации
             document.getElementById('btn-spec').addEventListener('click', function() {
                 const modalLogo = document.getElementById('modal-project-logo');
                 const mainLogo = document.getElementById('project-logo');
                 const modalTitle = document.getElementById('modal-project-title');
                 const mainTitle = document.getElementById('project-title');
+                const titleText = document.getElementById('modal-title-text');
 
-                if (modalTitle && mainTitle) {
-                    modalTitle.innerText = mainTitle.innerText;
-                }
+                if (modalTitle && mainTitle) modalTitle.innerText = mainTitle.innerText;
                 if (modalLogo && mainLogo && mainLogo.src) {
                     modalLogo.src = mainLogo.src;
                     modalLogo.style.display = mainLogo.style.display || 'block';
                 }
+                if (titleText) titleText.innerText = 'Спецификация материалов';
 
                 renderSpecification();
                 document.getElementById('modal-overlay').classList.add('open');
