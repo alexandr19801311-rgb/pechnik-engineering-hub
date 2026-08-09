@@ -1,14 +1,18 @@
 {
-  "TEST": {
+  "test": {
     "model": "erker_2984-nm.glb",
     "title": "Эркер 2984-НМ",
     "logo": "https://pechnik-novosib.ru/wp-content/uploads/2018/02/cropped-1-1.png",
-    "spec": "erker_2984-nm_spec.json"
+    "spec": "erker_2984-nm_spec.json",
+    "tech": "erker_2984-nm_tech.html",
+    "max_devices": 3
   },
-  "DEMO2024": {
-    "model": "oven.glb",
-    "title": "Комплекс гриль-печи",
-    "logo": "grill_logo.svg",
-    "spec": "pech_spec.json"
+  "test1": {
+    "model": "3240-mkv.glb",
+    "title": "3240-МКВ",
+    "logo": "https://pechnik-novosib.ru/wp-content/uploads/2018/02/cropped-1-1.png",
+    "spec": "3240-mkv_spec.json",
+    "tech": "3240-mkv_tech.html",
+    "max_devices": 3
   }
 }
