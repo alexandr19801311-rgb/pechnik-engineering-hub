@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>3D Плеер — Проект печи</title>
-    
-    <!-- Библиотеки для генерации PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        /* ===== БАЗОВЫЕ НАСТРОЙКИ И СБРОС ===== */
         * { box-sizing: border-box; }
         body { margin: 0; overflow: hidden; background: #0d0d0d; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; user-select: none; color: #fff; }
         canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
         a { text-decoration: none; color: inherit; }
 
-        /* ===== БРЕНДИНГ В ЛЕВОМ ВЕРХНЕМ УГЛУ ===== */
         #branding {
             position: absolute; top: 20px; left: 20px; z-index: 20; display: none;
             background: rgba(13, 13, 13, 0.75); backdrop-filter: blur(12px);
@@ -27,7 +23,6 @@
         #branding span { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
         #branding.active { display: flex; }
 
-        /* ===== ЭКРАН ДОСТУПА ===== */
         #access-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0d0d0d; z-index: 1000;
@@ -60,7 +55,6 @@
         .input-group button:active { transform: scale(0.96); }
         #error-msg { color: #ff4d4d; font-size: 14px; margin-top: 16px; display: none; font-weight: 500; }
 
-        /* ===== UI-КОНТЕЙНЕР (ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ) ===== */
         #ui-container {
             position: absolute;
             bottom: 24px;
@@ -101,7 +95,6 @@
             visibility: hidden;
         }
 
-        /* Кнопка скрытия панели */
         .fab-btn {
             pointer-events: auto;
             width: 32px; height: 32px; border-radius: 50%; border: none;
@@ -114,7 +107,6 @@
         .fab-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
         .fab-btn:active { transform: scale(0.9); }
 
-        /* ----- ЛЕВАЯ ГРУППА: СЛАЙДЕР ----- */
         .group-slider {
             display: flex; align-items: center; gap: 12px; flex: 1.4; min-width: 180px;
         }
@@ -141,8 +133,6 @@
             width: 16px; height: 16px; border-radius: 50%;
             background: #ff6b00; cursor: pointer; border: 2px solid #fff;
         }
-
-        /* Индикатор значения над слайдером (опционально) */
         .slider-val {
             position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
             background: #1e1e1e; padding: 2px 10px; border-radius: 8px;
@@ -151,7 +141,6 @@
         }
         .slider-wrapper:hover .slider-val { opacity: 1; }
 
-        /* ----- ЦЕНТРАЛЬНАЯ ГРУППА: НАВИГАЦИЯ ----- */
         .group-controls {
             display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
         }
@@ -165,8 +154,6 @@
         .btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateY(-1px); }
         .btn:active { transform: scale(0.92); }
         .btn-home { background: rgba(255, 255, 255, 0.08); }
-
-        /* Tooltip для кнопок */
         .btn::after {
             content: attr(data-tip);
             position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(0.9);
@@ -176,7 +163,6 @@
         }
         .btn:hover::after { opacity: 1; transform: translateX(-50%) scale(1); }
 
-        /* ----- ПРАВАЯ ГРУППА: ПАЛИТРЫ И ДЕЙСТВИЯ ----- */
         .group-right {
             display: flex; align-items: center; gap: 5px; flex: 1; justify-content: flex-end; flex-wrap: wrap;
         }
@@ -204,7 +190,6 @@
         .btn-spec { background: #ff6b00; color: #fff; }
         .btn-spec:hover { background: #e05e00; }
 
-        /* ===== МОДАЛЬНОЕ ОКНО ===== */
         #modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100;
@@ -244,7 +229,7 @@
             .group-right { flex: 1; justify-content: flex-start; gap: 4px; }
             .group-controls { gap: 4px; }
             .btn, .btn-toggle, .btn-action { width: 32px; height: 32px; font-size: 14px; }
-            .btn::after, .btn-toggle::after, .btn-action::after { display: none; } /* Отключаем подсказки на телефонах */
+            .btn::after, .btn-toggle::after, .btn-action::after { display: none; }
             .slider-val { display: none; }
         }
     </style>
@@ -260,13 +245,11 @@
 </head>
 <body>
 
-    <!-- БРЕНДИНГ -->
     <div id="branding">
         <img id="project-logo" src="" alt="logo" onerror="this.style.display='none'">
         <span id="project-title">Проект</span>
     </div>
 
-    <!-- ДОСТУП -->
     <div id="access-screen">
         <h1>🔒 Доступ к проекту</h1>
         <p>Введите номер заказа или код проекта</p>
@@ -277,12 +260,10 @@
         <div id="error-msg">Ключ недействителен или заказ не найден.</div>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div id="ui-container">
         <button class="fab-btn" id="toggle-ui">⌃</button>
         <div id="control-panel">
             
-            <!-- ЛЕВАЯ ГРУППА -->
             <div class="group-slider">
                 <div class="info-row">
                     <span style="opacity:0.5; font-weight:300;">⇪</span> Ряд <span id="current-row-txt">54</span><span class="row-counter">/54</span>
@@ -293,14 +274,12 @@
                 </div>
             </div>
 
-            <!-- ЦЕНТР: Навигация -->
             <div class="group-controls">
                 <button class="btn" id="btn-minus" data-tip="Убавить ряд">−</button>
                 <button class="btn" id="btn-plus" data-tip="Добавить ряд">+</button>
                 <button class="btn btn-home" id="btn-reset" data-tip="Сброс камеры">⌖</button>
             </div>
 
-            <!-- ПРАВАЯ ГРУППА -->
             <div class="group-right">
                 <button class="btn-toggle active" data-layer="palette_brick_facade" data-tip="Лицевой кирпич">▦</button>
                 <button class="btn-toggle active" data-layer="palette_brick_building" data-tip="Забутовка">⊞</button>
@@ -314,11 +293,17 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="modal-overlay">
         <div id="modal-content">
-            <span id="modal-close">&times;</span>
-            <h2>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-right: 0;">
+                <!-- Кнопка закрытия -->
+                <span id="modal-close" style="position: static; font-size: 26px; cursor: pointer; color: #888; transition: color 0.2s;">&times;</span>
+                
+                <!-- Кнопка "Поделиться" с умной ссылкой -->
+                <button id="btn-share-modal" style="background: none; border: none; color: #888; font-size: 20px; cursor: pointer; transition: color 0.2s; padding: 0; margin-right: 5px;" title="Поделиться проектом">🔗</button>
+            </div>
+
+            <h2 style="margin-top: 5px;">
                 <span id="modal-title-text">Спецификация материалов</span>
                 <span style="font-weight:400; color:#888; margin-left:5px;">—</span>
                 <span id="modal-project-title" style="font-weight:400; color:#ff6b00;">Проект</span>
@@ -349,6 +334,18 @@
 
         let currentSpecData = null;
         let currentTechPath = null;
+
+        // ===== УМНАЯ ЗАГРУЗКА ИЗ URL =====
+        function checkUrlForCode() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#') && hash.length > 1) {
+                const codeFromUrl = hash.substring(1).trim();
+                if (codeFromUrl) {
+                    document.getElementById('access-code').value = codeFromUrl;
+                    handleAccessCode();
+                }
+            }
+        }
 
         function updateVisibilityMatrix() {
             if (!model) return;
@@ -588,10 +585,17 @@
             errorMsg.style.display = 'none';
             document.getElementById('btn-unlock').innerText = 'Проверка...';
             
+            // Генерируем уникальный Device ID
+            let deviceId = localStorage.getItem('pechnik_device_id');
+            if (!deviceId) {
+                deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+                localStorage.setItem('pechnik_device_id', deviceId);
+            }
+            
             fetch('wc_auth.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'code=' + encodeURIComponent(code)
+                body: 'code=' + encodeURIComponent(code) + '&device_id=' + encodeURIComponent(deviceId)
             })
             .then(response => {
                 if (!response.ok) throw new Error('Ошибка доступа');
@@ -778,6 +782,44 @@
             }); });
             document.getElementById('toggle-ui').addEventListener('click', function() { document.getElementById('control-panel').classList.toggle('hidden'); });
             document.getElementById('btn-download-pdf').addEventListener('click', downloadModalContentAsPDF);
+
+            // ===== ОБРАБОТЧИК КНОПКИ "ПОДЕЛИТЬСЯ" =====
+            document.getElementById('btn-share-modal').addEventListener('click', function() {
+                const code = document.getElementById('access-code').value.trim();
+                if (!code) {
+                    alert('Сначала откройте проект по коду доступа.');
+                    return;
+                }
+                const baseUrl = window.location.href.split('#')[0];
+                // Добавляем ?bot=1 для корректного превью
+                const shareUrl = baseUrl + '#' + code;
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        const btn = this;
+                        btn.innerText = '✅';
+                        btn.style.color = '#28a745';
+                        setTimeout(() => {
+                            btn.innerText = '🔗';
+                            btn.style.color = '#888';
+                        }, 2000);
+                    });
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareUrl;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    const btn = this;
+                    btn.innerText = '✅';
+                    btn.style.color = '#28a745';
+                    setTimeout(() => {
+                        btn.innerText = '🔗';
+                        btn.style.color = '#888';
+                    }, 2000);
+                }
+            });
         }
 
         function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
@@ -785,6 +827,9 @@
 
         document.getElementById('btn-unlock').addEventListener('click', handleAccessCode);
         document.getElementById('access-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAccessCode(); });
+
+        // ===== ЗАПУСК ПРОВЕРКИ URL ПРИ ЗАГРУЗКЕ СТРАНИЦЫ =====
+        window.addEventListener('load', checkUrlForCode);
     </script>
 </body>
 </html>
