@@ -485,7 +485,9 @@
 
                 for (const [groupName, items] of Object.entries(metalGroups)) {
                     if (items.length > 0) {
-                        let groupHtml = `<div class="spec-group"><h3>${groupName}</h3>`;
+                        // Стилизуем металл так же, как в характеристиках
+                        let groupHtml = `<div style="margin-bottom: 16px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">`;
+                        groupHtml += `<h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">⚙️ ${groupName}</h3>`;
                         for (const item of items) {
                             groupHtml += `<div class="spec-line"><span>${item.name}</span><span>${item.qty} шт.</span></div>`;
                         }
@@ -497,17 +499,27 @@
 
             const totalBricksOnly = totalLight + totalDark + totalBuilding + totalRef;
             
+            // Собираем весь HTML в новом, стильном формате
             container.innerHTML = `
-                <div class="spec-group"><h3>Лицевой светлый (250×120×65)</h3><div class="spec-line"><span>Итого:</span><span>${totalLight} шт.</span></div></div>
-                <div class="spec-group"><h3>Лицевой тёмный (250×120×65)</h3><div class="spec-line"><span>Итого:</span><span>${totalDark} шт.</span></div></div>
-                <div class="spec-group"><h3>Строительный М150 (250×120×65)</h3><div class="spec-line"><span>Итого:</span><span>${totalBuilding} шт.</span></div></div>
-                <div class="spec-group"><h3>Шамот ШБ-8 (250×124×65)</h3><div class="spec-line"><span>Итого:</span><span>${totalRef} шт.</span></div></div>
-                <div class="spec-group"><h3>Растворы</h3>
-                    <div class="spec-line"><span>Цементно-песчаная М150:</span><span>${clayMortar} кг</span></div>
-                    <div class="spec-line"><span>Огнеупорный мертель:</span><span>${refractoryMortar} кг</span></div>
+                <div style="margin-bottom: 16px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">🧱 Кирпич</h3>
+                    <div class="spec-line"><span>Лицевой светлый (250×120×65)</span><span>${totalLight} шт.</span></div>
+                    <div class="spec-line"><span>Лицевой тёмный (250×120×65)</span><span>${totalDark} шт.</span></div>
+                    <div class="spec-line"><span>Строительный М150 (250×120×65)</span><span>${totalBuilding} шт.</span></div>
+                    <div class="spec-line"><span>Шамот ШБ-8 (250×124×65)</span><span>${totalRef} шт.</span></div>
                 </div>
+
+                <div style="margin-bottom: 16px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                    <h3 style="color: #28a745; margin: 0 0 12px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">🧪 Растворы</h3>
+                    <div class="spec-line"><span>Цементно-песчаная М150</span><span>${clayMortar} кг</span></div>
+                    <div class="spec-line"><span>Огнеупорный мертель</span><span>${refractoryMortar} кг</span></div>
+                </div>
+
                 ${metalHtml}
-                <div class="grand-total">Всего кирпича: <span>${totalBricksOnly} шт.</span></div>
+
+                <div style="margin-top: 16px; padding: 12px; border-top: 2px dashed rgba(255,255,255,0.1); text-align: right; font-size: 16px; font-weight: 600; color: #ff6b00;">
+                    Всего кирпича: <span style="color: #fff; font-weight: 400;">${totalBricksOnly} шт.</span>
+                </div>
             `;
         }
 
@@ -592,17 +604,17 @@
                 localStorage.setItem('pechnik_device_id', deviceId);
             }
             
-            fetch('wc_auth.php', {
+            fetch('wc.php?t=' + Date.now(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'code=' + encodeURIComponent(code) + '&device_id=' + encodeURIComponent(deviceId)
             })
             .then(response => {
                 if (!response.ok) throw new Error('Ошибка доступа');
-                const rawTitle = response.headers.get('X-Project-Title');
-                const rawLogo = response.headers.get('X-Project-Logo');
-                const rawSpec = response.headers.get('X-Project-Spec');
-                const rawTech = response.headers.get('X-Project-Tech');
+                const rawTitle = response.headers.get('x-project-title');
+                const rawLogo = response.headers.get('x-project-logo');
+                const rawSpec = response.headers.get('x-project-spec');
+                const rawTech = response.headers.get('x-project-tech');
                 
                 const title = rawTitle ? decodeURIComponent(rawTitle) : 'Проект печи';
                 const logo = rawLogo ? decodeURIComponent(rawLogo) : '';
@@ -746,25 +758,173 @@
             document.getElementById('btn-screenshot').addEventListener('click', function() {
                 if (!model || !renderer) return;
                 const canvas = renderer.domElement;
-                const dataURL = canvas.toDataURL('image/png');
-                const projectTitle = document.getElementById('project-title').innerText || 'Проект';
-                const currentRow = document.getElementById('current-row-txt').innerText || '0';
-                const safeTitle = projectTitle.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
-                const fileName = `Проект_${safeTitle}_Ряд_${currentRow}.png`;
-                const link = document.createElement('a');
-                link.href = dataURL;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                
+                // 1. Берем оригинальное изображение
+                const originalImg = new Image();
+                originalImg.src = canvas.toDataURL('image/png');
+                
+                originalImg.onload = function() {
+                    // 2. Создаём новый Canvas с повышенным качеством (в 2 раза больше DPI)
+                    const scale = 2;
+                    const watermarkCanvas = document.createElement('canvas');
+                    watermarkCanvas.width = originalImg.width * scale;
+                    watermarkCanvas.height = originalImg.height * scale;
+                    const ctx = watermarkCanvas.getContext('2d');
+                    
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    
+                    ctx.drawImage(originalImg, 0, 0, watermarkCanvas.width, watermarkCanvas.height);
+                    
+                    // 3. Загружаем логотип
+                    const logoImg = document.getElementById('project-logo');
+                    const logoSrc = logoImg.src || 'https://pechnik-novosib.ru/wp-content/uploads/2018/02/cropped-1-1.png';
+                    
+                    const watermarkLogo = new Image();
+                    watermarkLogo.crossOrigin = "anonymous";
+                    watermarkLogo.src = logoSrc;
+                    
+                    watermarkLogo.onload = function() {
+                        const projectTitle = document.getElementById('project-title').innerText || 'Проект';
+                        const currentRow = document.getElementById('current-row-txt').innerText || '0';
+                        const totalRows = maxRows;
+                        
+                        // ---- ГЕНЕРИРУЕМ ЛЕГЕНДУ МАТЕРИАЛОВ ----
+                        let legendLines = [];
+                        let hasMaterials = false;
+
+                        if (currentSpecData) {
+                            let totalLF = 0, totalSP = 0, totalSH8 = 0, totalDark = 0;
+                            
+                            if (currentSpecData["Лицевой светлый"]) {
+                                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой светлый"])) {
+                                    totalLF += itemData.qty;
+                                }
+                            }
+                            if (currentSpecData["Лицевой тёмный"]) {
+                                for (const [itemName, itemData] of Object.entries(currentSpecData["Лицевой тёмный"])) {
+                                    totalDark += itemData.qty;
+                                }
+                            }
+                            if (currentSpecData["Забутовка"]) {
+                                for (const [itemName, itemData] of Object.entries(currentSpecData["Забутовка"])) {
+                                    totalSP += itemData.qty;
+                                }
+                            }
+                            if (currentSpecData["Шамот"]) {
+                                for (const [itemName, itemData] of Object.entries(currentSpecData["Шамот"])) {
+                                    totalSH8 += itemData.qty;
+                                }
+                            }
+                            
+                            legendLines.push(`📋 Материалы:`);
+                            if (totalLF > 0) legendLines.push(`  Лицевой: ${totalLF} шт.`);
+                            if (totalDark > 0) legendLines.push(`  Тёмный: ${totalDark} шт.`);
+                            if (totalSP > 0) legendLines.push(`  Забутовка: ${totalSP} шт.`);
+                            if (totalSH8 > 0) legendLines.push(`  Шамот: ${totalSH8} шт.`);
+                            
+                            hasMaterials = legendLines.length > 1;
+                        }
+
+                        if (!hasMaterials) {
+                            legendLines = ['📋 Материалы:', '  Спецификация не загружена'];
+                        }
+                        // --------------------------------
+
+                        const logoSize = 60 * scale;
+                        const padding = 20 * scale;
+                        const bottomOffset = 15 * scale; 
+                        
+                        const textX = watermarkCanvas.width - logoSize - padding - (10 * scale);
+                        const textY = watermarkCanvas.height - padding - bottomOffset;
+
+                        const logoX = watermarkCanvas.width - logoSize - padding;
+                        const logoY = textY - logoSize; 
+                        
+                        ctx.drawImage(watermarkLogo, logoX, logoY, logoSize, logoSize);
+                        
+                        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                        ctx.shadowBlur = 6 * scale;
+                        
+                        // ---- ПРАВЫЙ БЛОК (БРЕНДИНГ) ----
+                        ctx.textAlign = 'right';
+                        ctx.textBaseline = 'bottom';
+                        
+                        ctx.font = `${14 * scale}px Arial`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        const rowInfo = `Ряд ${currentRow}/${totalRows}`;
+                        ctx.fillText(`${projectTitle} • ${rowInfo}`, textX, textY - (64 * scale));
+                        
+                        ctx.font = `${16 * scale}px Arial`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.fillText('pechnik-novosib.ru', textX, textY - (32 * scale));
+                        
+                        ctx.font = `bold ${24 * scale}px Arial`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                        ctx.fillText('Печных дел Мастер', textX, textY);
+                        
+                        // ---- ЛЕВЫЙ БЛОК (ЛЕГЕНДА) ----
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        
+                        const legendX = padding + (10 * scale);
+                        const legendY = textY;
+                        const lineHeight = 24 * scale;
+                        
+                        ctx.font = `${14 * scale}px Arial`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        
+                        const startY = legendY - lineHeight;
+                        for (let i = legendLines.length - 1; i >= 0; i--) {
+                            const lineY = startY - ((legendLines.length - 1 - i) * lineHeight);
+                            ctx.fillText(legendLines[i], legendX, lineY);
+                        }
+                        
+                        // ---- СОХРАНЕНИЕ С КРАСИВЫМ ИМЕНЕМ ----
+                        const finalDataURL = watermarkCanvas.toDataURL('image/png', 1.0);
+                        
+                        // ✨ Красивое имя файла ✨
+                        const fileName = `${projectTitle} — Ряд ${currentRow} из ${totalRows}.png`;
+
+                        const link = document.createElement('a');
+                        link.href = finalDataURL;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    };
+                    
+                    watermarkLogo.onerror = function() {
+                        const finalDataURL = watermarkCanvas.toDataURL('image/png', 1.0);
+                        const projectTitle = document.getElementById('project-title').innerText || 'Проект';
+                        const currentRow = document.getElementById('current-row-txt').innerText || '0';
+                        const totalRows = maxRows;
+                        const fileName = `${projectTitle} — Ряд ${currentRow} из ${totalRows}.png`;
+
+                        const link = document.createElement('a');
+                        link.href = finalDataURL;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    };
+                };
             });
             document.getElementById('btn-tech').addEventListener('click', loadTechnicalNotes);
-            document.getElementById('btn-spec').addEventListener('click', function() {
+                        document.getElementById('btn-spec').addEventListener('click', function() {
+                // Берем название проекта из шапки и принудительно декодируем
+                const mainTitle = document.getElementById('project-title');
+                const modalTitle = document.getElementById('modal-project-title');
+                if (mainTitle && modalTitle) {
+                    modalTitle.innerText = decodeURIComponent(mainTitle.innerText);
+                }
+
                 const titleText = document.getElementById('modal-title-text');
                 if (titleText) titleText.innerText = 'Спецификация материалов';
                 renderSpecification();
                 document.getElementById('modal-overlay').classList.add('open');
-            });            
+            });                       
             document.getElementById('modal-close').addEventListener('click', () => { document.getElementById('modal-overlay').classList.remove('open'); });
             document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) { document.getElementById('modal-overlay').classList.remove('open'); } });
             document.getElementById('row-slider').addEventListener('input', function() { 
