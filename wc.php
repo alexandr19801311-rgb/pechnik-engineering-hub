@@ -1,7 +1,13 @@
 <?php
-/**
- * wc_auth.php — Финальная защита по Device ID (через POST-данные)
- */
+// Жёстко задаём кодировку UTF-8 для всех заголовков
+mb_internal_encoding('UTF-8');
+header('Content-Type: text/html; charset=utf-8');
+
+// Запрещаем любое кэширование
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 $request_method = $_SERVER['REQUEST_METHOD'];
 $user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? strtolower($_SERVER['HTTP_USER_AGENT']) : '';
 $is_bot = preg_match('/(whatsapp|telegram|facebookexternalhit|twitterbot|slack|discord)/i', $user_agent);
@@ -10,7 +16,6 @@ $code = '';
 $device_id = '';
 
 if ($request_method === 'POST') {
-    // Безопасное получение данных через POST (не через заголовки)
     $code = isset($_POST['code']) ? trim(strtolower($_POST['code'])) : '';
     $device_id = isset($_POST['device_id']) ? trim($_POST['device_id']) : '';
 } else {
@@ -28,9 +33,6 @@ if (empty($code)) {
     exit;
 }
 
-// -------------------------------------------------------------------------
-// 1. Читаем keys.json и базу активаций
-// -------------------------------------------------------------------------
 $json_path = __DIR__ . '/keys.json';
 $activations_path = __DIR__ . '/activations.json';
 
@@ -62,9 +64,6 @@ if (!file_exists($activations_path)) {
 }
 $activations = json_decode(file_get_contents($activations_path), true);
 
-// -------------------------------------------------------------------------
-// 2. Ищем проект
-// -------------------------------------------------------------------------
 $master_config_lower = array_change_key_case($master_config, CASE_LOWER);
 if (!isset($master_config_lower[$code])) {
     if ($request_method === 'POST') {
@@ -79,9 +78,6 @@ if (!isset($master_config_lower[$code])) {
 
 $project = $master_config_lower[$code];
 
-// -------------------------------------------------------------------------
-// 3. ПРОВЕРКА АКТИВАЦИЙ (только для POST-запросов)
-// -------------------------------------------------------------------------
 $max_devices = isset($project['max_devices']) ? intval($project['max_devices']) : 1;
 
 if (!isset($activations[$code])) {
@@ -89,7 +85,6 @@ if (!isset($activations[$code])) {
 }
 
 if (!$is_bot && $request_method === 'POST') {
-    // Если не передали device_id — блокируем сразу
     if (empty($device_id)) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'Ошибка идентификации устройства. Обновите плеер.']);
@@ -107,9 +102,6 @@ if (!$is_bot && $request_method === 'POST') {
     }
 }
 
-// -------------------------------------------------------------------------
-// 4. Отдаём превью для ботов
-// -------------------------------------------------------------------------
 if ($is_bot && $request_method !== 'POST') {
     $preview_image = __DIR__ . '/model/preview_' . basename($project['model'] ?? '', '.glb') . '.jpg';
     if (!file_exists($preview_image)) {
@@ -137,9 +129,6 @@ HTML;
     exit;
 }
 
-// -------------------------------------------------------------------------
-// 5. Отдаём GLB-файл
-// -------------------------------------------------------------------------
 $model_file = __DIR__ . '/model/' . ($project['model'] ?? '');
 if (!file_exists($model_file)) {
     if ($request_method === 'POST') {
@@ -153,13 +142,21 @@ if (!file_exists($model_file)) {
 }
 
 if ($request_method === 'POST') {
-    header('Content-Type: application/octet-stream');
+    // КРИТИЧНО ВАЖНО: Добавляем кодировку UTF-8 в заголовки
+    header('Content-Type: application/octet-stream; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . basename($model_file) . '"');
     header('Content-Length: ' . filesize($model_file));
+    
+    // Отправляем заголовки проекта (снова используем rawurlencode, но уже с защитой кодировки)
     header('X-Project-Title: ' . rawurlencode($project['title'] ?? 'Проект'));
     header('X-Project-Logo: ' . rawurlencode($project['logo'] ?? ''));
     header('X-Project-Spec: ' . rawurlencode($project['spec'] ?? ''));
     header('X-Project-Tech: ' . rawurlencode($project['tech'] ?? ''));
+    
+    // Очищаем буфер перед отправкой файла
+    ob_clean();
+    flush();
+    
     readfile($model_file);
     exit;
 } else {
