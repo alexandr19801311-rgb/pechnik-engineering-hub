@@ -1,5 +1,5 @@
 {
-  "test": {
+  "test1": {
     "model": "erker_2984-nm.glb",
     "title": "Эркер 2984-НМ",
     "logo": "https://pechnik-novosib.ru/wp-content/uploads/2018/02/cropped-1-1.png",
@@ -7,7 +7,7 @@
     "tech": "erker_2984-nm_tech.html",
     "max_devices": 3
   },
-  "test1": {
+  "test2": {
     "model": "3240-mkv.glb",
     "title": "3240-МКВ",
     "logo": "https://pechnik-novosib.ru/wp-content/uploads/2018/02/cropped-1-1.png",
