@@ -564,10 +564,11 @@
             controls.enableDamping = true; controls.dampingFactor = 0.08;
 
             const rgbeloader = new RGBELoader();
-            rgbeloader.load('park.hdr', function (texture) {
-                texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.environment = texture; scene.background = texture;
-            }, undefined, function () { scene.background = new THREE.Color(0x1a1a1a); });
+              rgbeloader.load('park.hdr', function (texture) {
+                 texture.mapping = THREE.EquirectangularReflectionMapping;
+                 scene.environment = texture; // Отражения остаются
+                 scene.background = new THREE.Color(0xffffff); // Фон стал белым
+            }, undefined, function () { scene.background = new THREE.Color(0xffffff); });
 
             const gltfLoader = new GLTFLoader();
             gltfLoader.load(blobUrl, function (gltf) {
@@ -851,29 +852,29 @@
                         ctx.textBaseline = 'bottom';
                         
                         ctx.font = `${14 * scale}px Arial`;
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
                         const rowInfo = `Ряд ${currentRow}/${totalRows}`;
                         ctx.fillText(`${projectTitle} • ${rowInfo}`, textX, textY - (64 * scale));
                         
                         ctx.font = `${16 * scale}px Arial`;
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
                         ctx.fillText('pechnik-novosib.ru', textX, textY - (32 * scale));
                         
                         ctx.font = `bold ${24 * scale}px Arial`;
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
                         ctx.fillText('Печных дел Мастер', textX, textY);
                         
                         // ---- ЛЕВЫЙ БЛОК (ЛЕГЕНДА) ----
                         ctx.textAlign = 'left';
                         ctx.textBaseline = 'bottom';
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                         
                         const legendX = padding + (10 * scale);
                         const legendY = textY;
                         const lineHeight = 24 * scale;
                         
                         ctx.font = `${14 * scale}px Arial`;
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                         
                         const startY = legendY - lineHeight;
                         for (let i = legendLines.length - 1; i >= 0; i--) {
