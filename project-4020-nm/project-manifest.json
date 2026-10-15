@@ -1,0 +1,20 @@
+﻿{
+    "constants_and_physics":  {
+                                  "oven_seam_mm":  "5мм - Шамот, 10мм - Лицевой/Строительный"
+                              },
+    "passport":  {
+                     "author":  "Александр",
+                     "project_name":  "Печной комплекс ПЕЧНИК-НОВОСИБ (Проект 4020-НМ)",
+                     "project_id":  "4020-NM"
+                 },
+    "current_achievements":  {
+                                 "metrics":  {
+                                                 "brick_red_total_pcs":  898,
+                                                 "brick_shamot_total_pcs":  336,
+                                                 "mortar_red_bags_25kg":  17,
+                                                 "mortar_shamot_bags_25kg":  4
+                                             },
+                                 "version":  "v37.0",
+                                 "total_rows":  54
+                             }
+}

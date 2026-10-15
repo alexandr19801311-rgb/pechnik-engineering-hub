@@ -1,0 +1,49 @@
+﻿# Безопасность
+keys.json
+activations.json
+
+# Рендеры и сцены
+01_scenes/
+03_web_guide/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# HDRI
+*.hdr
+
+# 3D-модели
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.skp
+
+# Буклеты и PDF
+output/
+buklet_*.html
+buklet_*.pdf
+*.pdf
+
+# Кэш и временные
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# SketchUp
+*.skb
+Backup/
+
+# Debug
+debug_sandbox/

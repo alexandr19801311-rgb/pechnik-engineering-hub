@@ -1,0 +1,51 @@
+require 'json'
+
+model = Sketchup.active_model
+definitions = model.definitions
+components_data = {}
+
+definitions.each do |defn|
+  raw_name = defn.name.strip
+  clean_name = raw_name.gsub(/[ _#]\d+(_\d+)*$/, '')
+  count = defn.instances.length
+  next if count == 0
+
+  match = clean_name.match(/^([A-Za-z0-9_]+)-(\d+)-([A-Za-z0-9_]+)/)
+
+  if match
+    code = match[0]
+    length = match[2].to_i
+    components_data[code] ? components_data[code][:qty] += count : components_data[code] = { qty: count, length: length }
+  elsif !clean_name.empty?
+    components_data[clean_name] ? components_data[clean_name][:qty] += count : components_data[clean_name] = { qty: count, length: 250 }
+  end
+end
+
+final_spec = {
+  "Лицевой светлый" => {},
+  "Лицевой тёмный" => {},
+  "Забутовка" => {},
+  "Шамот" => {},
+  "Литье / Металл" => {}
+}
+
+components_data.each do |code, data|
+  lower_code = code.downcase
+  if lower_code.start_with?('lf_dark-') || lower_code.start_with?('lf_dark_')
+    final_spec["Лицевой тёмный"][code] = data
+  elsif lower_code.start_with?('lf-') || lower_code.start_with?('lf_')
+    final_spec["Лицевой светлый"][code] = data
+  elsif lower_code.start_with?('sp-') || lower_code.start_with?('sp_')
+    final_spec["Забутовка"][code] = data
+  elsif lower_code.start_with?('sh8-') || lower_code.start_with?('sh8_')
+    final_spec["Шамот"][code] = data
+  else
+    final_spec["Литье / Металл"][code] = data
+  end
+end
+
+final_spec.delete_if { |_, v| v.empty? }
+json_string = JSON.pretty_generate(final_spec)
+file_path = File.join(File.dirname(model.path), 'erker_2984-nm_spec.json')
+File.write(file_path, json_string)
+puts "✅ Файл спецификации сохранен: #{file_path}"
