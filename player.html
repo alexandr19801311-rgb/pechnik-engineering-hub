@@ -190,19 +190,25 @@
         .btn-spec { background: #ff6b00; color: #fff; }
         .btn-spec:hover { background: #e05e00; }
 
-        /* ===== НОВОЕ: ПРИЗРАК СЛЕДУЮЩЕГО РЯДА ===== */
+        /* ===== ПРИЗРАК СЛЕДУЮЩЕГО РЯДА ===== */
         #btn-ghost.active {
             background: #6c5ce7; color: #fff; border-color: #6c5ce7;
             box-shadow: 0 0 20px rgba(108, 92, 231, 0.4);
         }
 
-        /* ===== НОВОЕ: АВТОПОВОРОТ КАМЕРЫ ===== */
+        /* ===== АВТОПОВОРОТ КАМЕРЫ ===== */
         #btn-autorotate.active {
             background: #28a745; color: #fff; border-color: #28a745;
             box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
         }
 
-        /* ===== НОВОЕ: ПРОГРЕСС-БАР ЗАГРУЗКИ ===== */
+        /* ===== РЕЖИМ "ТОЛЬКО ВЫБРАННЫЙ РЯД" ===== */
+        #btn-single-row.active {
+            background: #ff6b00; color: #fff; border-color: #ff6b00;
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.4);
+        }
+
+        /* ===== ПРОГРЕСС-БАР ЗАГРУЗКИ ===== */
         #loading-container {
             position: fixed; bottom: 100px; left: 50%;
             transform: translateX(-50%);
@@ -282,8 +288,7 @@
             }
         }
     </script>
-</head>
-<body>
+    <body>
 
     <div id="branding">
         <img id="project-logo" src="" alt="logo" onerror="this.style.display='none'">
@@ -326,6 +331,7 @@
                 <button class="btn-toggle active" data-layer="palette_brick_refractory" data-tip="Шамот">⟐</button>
                 <button class="btn-toggle active" data-layer="palette_iron" data-tip="Литье и металл">⚙</button>
                 <button class="btn-toggle" id="btn-ghost" data-tip="Призрак следующего ряда">👻</button>
+                <button class="btn-toggle" id="btn-single-row" data-tip="Только выбранный ряд">🎯</button>
                 <button class="btn-action" id="btn-autorotate" data-tip="Автоповорот камеры">▶</button>
                 <button class="btn-action" id="btn-screenshot" data-tip="Скриншот">⊡</button>
                 <button class="btn-action" id="btn-tech" data-tip="Характеристики">≡</button>
@@ -389,6 +395,7 @@
         // ===== НОВОЕ: состояние функций =====
         let ghostEnabled = false;
         let autorotateEnabled = false;
+        let singleRowMode = false;   // 🎯 Показывать только выбранный ряд
 
         // ===== УМНАЯ ЗАГРУЗКА ИЗ URL =====
         function checkUrlForCode() {
@@ -429,7 +436,7 @@
                         mats.forEach(m => {
                             m.transparent = true;
                             m.opacity = (m.userData._baseOpacity !== undefined ? m.userData._baseOpacity : 1) * opacity;
-                            m.depthWrite = true;   // 🔧 ФИКС: было false
+                            m.depthWrite = true;
                             m.needsUpdate = true;
                         });
                     }
@@ -461,8 +468,18 @@
                 if (matchRow) {
                     let rowNumber = parseInt(matchRow[1]);
                     
-                    // 👻 ЛОГИКА ПРИЗРАКА СЛЕДУЮЩЕГО РЯДА
-                    if (rowNumber <= currentRenderedRow) {
+                    // 🎯 РЕЖИМ "ТОЛЬКО ВЫБРАННЫЙ РЯД"
+                    if (singleRowMode) {
+                        if (rowNumber === currentRenderedRow) {
+                            node.visible = true;
+                            setRowOpacity(node, 1.0);
+                        } else {
+                            node.visible = false;
+                            setRowOpacity(node, 1.0);
+                        }
+                    }
+                    // 👻 ОБЫЧНЫЙ РЕЖИМ (с призраком)
+                    else if (rowNumber <= currentRenderedRow) {
                         // Прошлые и текущий — нормальная видимость
                         node.visible = true;
                         setRowOpacity(node, 1.0);
@@ -724,6 +741,9 @@
                         updateVisibilityMatrix();
                     }
                 }
+                
+                // 🎥 Автоподгонка камеры — модель видна целиком
+                setTimeout(fitCameraToModel, 100);
             }, function (xhr) {
                 // 🔥 onProgress — обновление прогресс-бара
                 if (xhr.total > 0) {
@@ -813,7 +833,38 @@
         }
 
         function resetCameraPosition() { camera.position.set(0, 2, 5); if (controls) controls.target.set(0, 1, 0); }
-
+        
+        // 🎥 Автоподгонка камеры под размер модели
+        function fitCameraToModel() {
+            if (!model || !camera || !controls) return;
+            
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            
+            // Находим максимальный габарит
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // Учитываем FOV камеры
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
+            
+            // Множитель для запаса (чтобы модель не касалась краёв)
+            cameraDistance *= 1.8;
+            
+            // Ставим камеру по диагонали (изометрия-like)
+            const angleH = Math.PI / 4;      // 45° по горизонтали
+            const angleV = Math.PI / 6;      // 30° вверх
+            
+            camera.position.x = center.x + cameraDistance * Math.cos(angleH) * Math.cos(angleV);
+            camera.position.y = center.y + cameraDistance * Math.sin(angleV);
+            camera.position.z = center.z + cameraDistance * Math.sin(angleH) * Math.cos(angleV);
+            
+            // Смотрим в центр модели
+            controls.target.copy(center);
+            controls.update();
+        }
+        
         function downloadModalContentAsPDF() {
             const btn = document.getElementById('btn-download-pdf');
             const originalText = btn.innerText;
@@ -910,7 +961,7 @@
                     document.getElementById('row-slider').value = currentRenderedRow; 
                 } 
             });
-            document.getElementById('btn-reset').addEventListener('click', resetCameraPosition);
+            document.getElementById('btn-reset').addEventListener('click', fitCameraToModel);
             
             document.getElementById('btn-screenshot').addEventListener('click', function() {
                 if (!model || !renderer) return;
@@ -1088,7 +1139,7 @@
             document.querySelectorAll('.btn-toggle').forEach(button => { 
                 button.addEventListener('click', function() { 
                     const layerName = this.getAttribute('data-layer'); 
-                    // Пропускаем кнопку призрака — у неё своя логика
+                    // Пропускаем кнопку призрака и single-row — у них своя логика
                     if (layerName) {
                         this.classList.toggle('active'); 
                         activePalettes[layerName] = this.classList.contains('active'); 
@@ -1104,6 +1155,27 @@
             document.getElementById('btn-ghost').addEventListener('click', function() {
                 ghostEnabled = !ghostEnabled;
                 this.classList.toggle('active', ghostEnabled);
+                
+                // Если включаем призрак — выключаем 🎯
+                if (ghostEnabled && singleRowMode) {
+                    singleRowMode = false;
+                    document.getElementById('btn-single-row').classList.remove('active');
+                }
+                
+                updateVisibilityMatrix();
+            });
+
+            // 🎯 ТОЛЬКО ВЫБРАННЫЙ РЯД
+            document.getElementById('btn-single-row').addEventListener('click', function() {
+                singleRowMode = !singleRowMode;
+                this.classList.toggle('active', singleRowMode);
+                
+                // Если включаем 🎯 — выключаем 👻
+                if (singleRowMode && ghostEnabled) {
+                    ghostEnabled = false;
+                    document.getElementById('btn-ghost').classList.remove('active');
+                }
+                
                 updateVisibilityMatrix();
             });
 
@@ -1155,8 +1227,7 @@
                 }
             });
         }
-
-        function animate() { 
+                function animate() { 
             requestAnimationFrame(animate); 
             controls.update(); 
             renderer.render(scene, camera); 
@@ -1176,3 +1247,4 @@
     </script>
 </body>
 </html>
+</head>
