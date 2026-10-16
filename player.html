@@ -70,6 +70,171 @@
             pointer-events: none;
         }
 
+        /* ===== ПАНЕЛЬ РАЗРЕЗА (отдельная, над основной) ===== */
+        #clip-panel {
+            pointer-events: auto;
+            background: rgba(18, 18, 18, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+            padding: 12px 20px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 700px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        #clip-panel.active { display: flex; }
+        
+        #clip-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 8px;
+        }
+        #clip-panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #clip-panel-close {
+            background: none; border: none; color: #888; font-size: 20px;
+            cursor: pointer; padding: 0; transition: color 0.2s;
+        }
+        #clip-panel-close:hover { color: #fff; }
+        
+        .clip-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .clip-label {
+            width: 100px;
+            font-size: 13px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .clip-axis-color {
+            width: 12px; height: 12px; border-radius: 3px;
+            flex-shrink: 0;
+            transition: opacity 0.2s;
+        }
+        .clip-axis-color.x { background: #ff4d4d; }
+        .clip-axis-color.y { background: #4dff4d; }
+        .clip-axis-color.z { background: #4d4dff; }
+        
+        /* Тумблер-чекбокс */
+        .clip-toggle {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .clip-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .clip-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.15);
+            border-radius: 18px;
+            transition: 0.2s;
+        }
+        .clip-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        .clip-toggle input:checked + .clip-toggle-slider {
+            background-color: #ff6b00;
+        }
+        .clip-toggle input:checked + .clip-toggle-slider:before {
+            transform: translateX(14px);
+        }
+        
+        .clip-slider-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .clip-slider-wrapper input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 3px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 4px;
+            outline: none;
+        }
+        .clip-slider-wrapper input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff6b00;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .clip-slider-wrapper input[type=range]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff6b00;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        .clip-slider-value {
+            width: 45px;
+            text-align: right;
+            font-size: 12px;
+            color: #fff;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        #clip-reset-btn {
+            align-self: flex-end;
+            padding: 6px 16px;
+            background: rgba(255, 107, 0, 0.15);
+            border: 1px solid rgba(255, 107, 0, 0.4);
+            border-radius: 8px;
+            color: #ff6b00;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+        #clip-reset-btn:hover {
+            background: rgba(255, 107, 0, 0.25);
+            border-color: #ff6b00;
+        }
+
+        /* ===== ОСНОВНАЯ ПАНЕЛЬ ===== */
         #control-panel {
             pointer-events: auto;
             background: rgba(18, 18, 18, 0.8);
@@ -190,10 +355,10 @@
         .btn-spec { background: #ff6b00; color: #fff; }
         .btn-spec:hover { background: #e05e00; }
 
-        /* ===== ПРИЗРАК СЛЕДУЮЩЕГО РЯДА ===== */
-        #btn-ghost.active {
-            background: #6c5ce7; color: #fff; border-color: #6c5ce7;
-            box-shadow: 0 0 20px rgba(108, 92, 231, 0.4);
+        /* ===== КНОПКА РАЗРЕЗА (заменяет призрак) ===== */
+        #btn-clip.active {
+            background: #00aaff; color: #fff; border-color: #00aaff;
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.4);
         }
 
         /* ===== АВТОПОВОРОТ КАМЕРЫ ===== */
@@ -277,6 +442,10 @@
             .btn, .btn-toggle, .btn-action { width: 32px; height: 32px; font-size: 14px; }
             .btn::after, .btn-toggle::after, .btn-action::after { display: none; }
             .slider-val { display: none; }
+            
+            #clip-panel { max-width: 96%; padding: 10px 14px; }
+            .clip-label { width: 70px; font-size: 12px; }
+            .clip-slider-value { width: 35px; font-size: 11px; }
         }
     </style>
     
@@ -307,6 +476,62 @@
 
     <div id="ui-container">
         <button class="fab-btn" id="toggle-ui">⌃</button>
+        
+        <!-- ===== ПАНЕЛЬ РАЗРЕЗА (появляется при нажатии ✂) ===== -->
+        <div id="clip-panel">
+            <div id="clip-panel-header">
+                <div id="clip-panel-title">✂ РАЗРЕЗ МОДЕЛИ</div>
+                <button id="clip-panel-close" title="Закрыть панель">✕</button>
+            </div>
+            
+            <div class="clip-row">
+                <label class="clip-label" for="clip-x-enabled">
+                    <span class="clip-axis-color x"></span>
+                    <span>Ось X</span>
+                </label>
+                <label class="clip-toggle">
+                    <input type="checkbox" id="clip-x-enabled">
+                    <span class="clip-toggle-slider"></span>
+                </label>
+                <div class="clip-slider-wrapper">
+                    <input type="range" id="clip-x-slider" min="0" max="100" value="50" disabled>
+                    <span class="clip-slider-value" id="clip-x-value">50%</span>
+                </div>
+            </div>
+            
+            <div class="clip-row">
+                <label class="clip-label" for="clip-y-enabled">
+                    <span class="clip-axis-color y"></span>
+                    <span>Ось Y</span>
+                </label>
+                <label class="clip-toggle">
+                    <input type="checkbox" id="clip-y-enabled">
+                    <span class="clip-toggle-slider"></span>
+                </label>
+                <div class="clip-slider-wrapper">
+                    <input type="range" id="clip-y-slider" min="0" max="100" value="50" disabled>
+                    <span class="clip-slider-value" id="clip-y-value">50%</span>
+                </div>
+            </div>
+            
+            <div class="clip-row">
+                <label class="clip-label" for="clip-z-enabled">
+                    <span class="clip-axis-color z"></span>
+                    <span>Ось Z</span>
+                </label>
+                <label class="clip-toggle">
+                    <input type="checkbox" id="clip-z-enabled">
+                    <span class="clip-toggle-slider"></span>
+                </label>
+                <div class="clip-slider-wrapper">
+                    <input type="range" id="clip-z-slider" min="0" max="100" value="50" disabled>
+                    <span class="clip-slider-value" id="clip-z-value">50%</span>
+                </div>
+            </div>
+            
+            <button id="clip-reset-btn">🔄 Сбросить все разрезы</button>
+        </div>
+
         <div id="control-panel">
             
             <div class="group-slider">
@@ -330,7 +555,7 @@
                 <button class="btn-toggle active" data-layer="palette_brick_building" data-tip="Забутовка">⊞</button>
                 <button class="btn-toggle active" data-layer="palette_brick_refractory" data-tip="Шамот">⟐</button>
                 <button class="btn-toggle active" data-layer="palette_iron" data-tip="Литье и металл">⚙</button>
-                <button class="btn-toggle" id="btn-ghost" data-tip="Призрак следующего ряда">👻</button>
+                <button class="btn-toggle" id="btn-clip" data-tip="Разрез модели">✂</button>
                 <button class="btn-toggle" id="btn-single-row" data-tip="Только выбранный ряд">🎯</button>
                 <button class="btn-action" id="btn-autorotate" data-tip="Автоповорот камеры">▶</button>
                 <button class="btn-action" id="btn-screenshot" data-tip="Скриншот">⊡</button>
@@ -393,9 +618,21 @@
         let currentTechPath = null;
 
         // ===== НОВОЕ: состояние функций =====
-        let ghostEnabled = false;
         let autorotateEnabled = false;
         let singleRowMode = false;   // 🎯 Показывать только выбранный ряд
+
+        // ===== НОВОЕ: КЛИППИНГ (разрез) =====
+        let clipPlaneX = null;
+        let clipPlaneY = null;
+        let clipPlaneZ = null;
+        let clipHelperX = null;
+        let clipHelperY = null;
+        let clipHelperZ = null;
+        let clipEnabledX = false;
+        let clipEnabledY = false;
+        let clipEnabledZ = false;
+        let modelBoundingBox = null;   // Границы модели (для расчёта позиции плоскости)
+        let clipPanelOpen = false;
 
         // ===== УМНАЯ ЗАГРУЗКА ИЗ URL =====
         function checkUrlForCode() {
@@ -407,49 +644,6 @@
                     handleAccessCode();
                 }
             }
-        }
-
-        // ===== НОВОЕ: управление прозрачностью (для призрака) =====
-        function setRowOpacity(node, opacity) {
-            const isGhostMode = opacity < 1;
-            
-            node.traverse(child => {
-                if (!child.isMesh) return;
-                
-                if (isGhostMode) {
-                    if (!child.userData._origMaterial) {
-                        const originals = Array.isArray(child.material) ? child.material : [child.material];
-                        child.userData._origMaterial = child.material;
-                        
-                        const cloned = originals.map(m => {
-                            const mClone = m.clone();
-                            mClone.userData._baseOpacity = m.opacity;
-                            mClone.transparent = true;
-                            mClone.opacity = m.opacity * opacity;
-                            mClone.depthWrite = true;   // 🔧 ФИКС: было false
-                            mClone.needsUpdate = true;
-                            return mClone;
-                        });
-                        child.material = Array.isArray(child.material) ? cloned : cloned[0];
-                    } else {
-                        const mats = Array.isArray(child.material) ? child.material : [child.material];
-                        mats.forEach(m => {
-                            m.transparent = true;
-                            m.opacity = (m.userData._baseOpacity !== undefined ? m.userData._baseOpacity : 1) * opacity;
-                            m.depthWrite = true;
-                            m.needsUpdate = true;
-                        });
-                    }
-                } else {
-                    if (child.userData._origMaterial) {
-                        const currentMats = Array.isArray(child.material) ? child.material : [child.material];
-                        currentMats.forEach(m => m.dispose());
-                        
-                        child.material = child.userData._origMaterial;
-                        delete child.userData._origMaterial;
-                    }
-                }
-            });
         }
 
         function updateVisibilityMatrix() {
@@ -470,29 +664,11 @@
                     
                     // 🎯 РЕЖИМ "ТОЛЬКО ВЫБРАННЫЙ РЯД"
                     if (singleRowMode) {
-                        if (rowNumber === currentRenderedRow) {
-                            node.visible = true;
-                            setRowOpacity(node, 1.0);
-                        } else {
-                            node.visible = false;
-                            setRowOpacity(node, 1.0);
-                        }
+                        node.visible = (rowNumber === currentRenderedRow);
                     }
-                    // 👻 ОБЫЧНЫЙ РЕЖИМ (с призраком)
-                    else if (rowNumber <= currentRenderedRow) {
-                        // Прошлые и текущий — нормальная видимость
-                        node.visible = true;
-                        setRowOpacity(node, 1.0);
-                    } 
-                    else if (ghostEnabled && rowNumber === currentRenderedRow + 1) {
-                        // Следующий ряд — полупрозрачный призрак
-                        node.visible = true;
-                        setRowOpacity(node, 0.5);
-                    } 
+                    // 📊 ОБЫЧНЫЙ РЕЖИМ (накопительно)
                     else {
-                        // Всё остальное — невидимо
-                        node.visible = false;
-                        setRowOpacity(node, 1.0);
+                        node.visible = (rowNumber <= currentRenderedRow);
                     }
                 }
                 
@@ -693,6 +869,8 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.2;
+            // ✂ Включаем поддержку клиппинга на уровне рендерера
+            renderer.localClippingEnabled = true;
             document.body.appendChild(renderer.domElement);
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -719,7 +897,8 @@
                 window.__debugModel = model;
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
-                model.position.sub(center); model.position.y = 0; model.scale.set(1.3, 1.3, 1.3);
+                model.position.sub(center);   // центрируем в (0,0,0)
+                model.scale.set(1.3, 1.3, 1.3);
                 scene.add(model);
                 
                 // 🔥 Прогресс-бар: завершение
@@ -744,6 +923,9 @@
                 
                 // 🎥 Автоподгонка камеры — модель видна целиком
                 setTimeout(fitCameraToModel, 100);
+                
+                // ✂ Инициализация системы клиппинга
+                setTimeout(setupClipping, 150);
             }, function (xhr) {
                 // 🔥 onProgress — обновление прогресс-бара
                 if (xhr.total > 0) {
@@ -751,7 +933,6 @@
                     loadingProgress.style.width = percent + '%';
                     loadingPercent.innerText = percent + '%';
                 } else {
-                    // Если total неизвестен (модель в кэше) — показываем анимацию
                     loadingProgress.style.width = '50%';
                     loadingPercent.innerText = '...';
                 }
@@ -842,27 +1023,143 @@
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
             
-            // Находим максимальный габарит
             const maxDim = Math.max(size.x, size.y, size.z);
-            
-            // Учитываем FOV камеры
             const fov = camera.fov * (Math.PI / 180);
             let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-            
-            // Множитель для запаса (чтобы модель не касалась краёв)
             cameraDistance *= 1.8;
             
-            // Ставим камеру по диагонали (изометрия-like)
-            const angleH = Math.PI / 4;      // 45° по горизонтали
-            const angleV = Math.PI / 6;      // 30° вверх
+            const angleH = Math.PI / 4;
+            const angleV = Math.PI / 6;
             
             camera.position.x = center.x + cameraDistance * Math.cos(angleH) * Math.cos(angleV);
             camera.position.y = center.y + cameraDistance * Math.sin(angleV);
             camera.position.z = center.z + cameraDistance * Math.sin(angleH) * Math.cos(angleV);
             
-            // Смотрим в центр модели
             controls.target.copy(center);
             controls.update();
+        }
+        
+        // ====================================================================
+        // ✂ СИСТЕМА КЛИППИНГА (РАЗРЕЗ МОДЕЛИ)
+        // ====================================================================
+        
+        // Вычисляем bounding box модели и создаём плоскости + helpers
+        function setupClipping() {
+            if (!model || !scene) return;
+            
+            // Обновляем мировые матрицы (нужно, чтобы bounding box был корректным)
+            model.updateMatrixWorld(true);
+            
+            // Границы модели
+            modelBoundingBox = new THREE.Box3().setFromObject(model);
+            const center = modelBoundingBox.getCenter(new THREE.Vector3());
+            const size = modelBoundingBox.getSize(new THREE.Vector3());
+            
+            // Создаём 3 плоскости с нормалями по осям
+            // constant подбирается так, чтобы плоскость была в центре модели
+            clipPlaneX = new THREE.Plane(new THREE.Vector3(1, 0, 0), -center.x);
+            clipPlaneY = new THREE.Plane(new THREE.Vector3(0, -1, 0), -center.y);
+            clipPlaneZ = new THREE.Plane(new THREE.Vector3(0, 0, -1), center.z);
+            
+            // Вспомогательные линии (PlaneHelper) — размер берём из модели
+            const helperSize = Math.max(size.x, size.y, size.z) * 1.5;
+            
+            clipHelperX = new THREE.PlaneHelper(clipPlaneX, helperSize, 0xff4d4d);
+            clipHelperY = new THREE.PlaneHelper(clipPlaneY, helperSize, 0x4dff4d);
+            clipHelperZ = new THREE.PlaneHelper(clipPlaneZ, helperSize, 0x4d4dff);
+            
+            clipHelperX.visible = false;
+            clipHelperY.visible = false;
+            clipHelperZ.visible = false;
+            
+            scene.add(clipHelperX);
+            scene.add(clipHelperY);
+            scene.add(clipHelperZ);
+            
+            console.log('✂ Клиппинг инициализирован. Границы модели:', modelBoundingBox);
+        }
+        
+        // Применяем активные плоскости ко всем материалам модели
+        function applyClipping() {
+            if (!model) return;
+            
+            const activePlanes = [];
+            if (clipEnabledX && clipPlaneX) activePlanes.push(clipPlaneX);
+            if (clipEnabledY && clipPlaneY) activePlanes.push(clipPlaneY);
+            if (clipEnabledZ && clipPlaneZ) activePlanes.push(clipPlaneZ);
+            
+            model.traverse(child => {
+                if (!child.isMesh || !child.material) return;
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach(m => {
+                    if (activePlanes.length > 0) {
+                        m.clippingPlanes = activePlanes;
+                        m.clipShadows = true;
+                    } else {
+                        m.clippingPlanes = null;
+                    }
+                    m.needsUpdate = true;
+                });
+            });
+            
+            // Показываем/скрываем helpers
+            if (clipHelperX) clipHelperX.visible = clipEnabledX;
+            if (clipHelperY) clipHelperY.visible = clipEnabledY;
+            if (clipHelperZ) clipHelperZ.visible = clipEnabledZ;
+        }
+        
+        // Обновляем позицию плоскости по слайдеру (0..100 → min..max по bbox)
+        function updateClipPlane(axis, percent) {
+            if (!modelBoundingBox) return;
+            
+            const min = modelBoundingBox.min;
+            const max = modelBoundingBox.max;
+            const t = percent / 100;
+            
+            // Для каждой оси — плоскость перпендикулярна оси, значение меняется от min до max
+            if (axis === 'x' && clipPlaneX) {
+                const value = min.x + (max.x - min.x) * t;
+                clipPlaneX.constant = -value;
+            } else if (axis === 'y' && clipPlaneY) {
+                const value = min.y + (max.y - min.y) * t;
+                clipPlaneY.constant = -value;
+            } else if (axis === 'z' && clipPlaneZ) {
+                const value = min.z + (max.z - min.z) * t;
+                clipPlaneZ.constant = value;
+            }
+        }
+        
+        // Полный сброс клиппинга
+        function resetClipping() {
+            clipEnabledX = false;
+            clipEnabledY = false;
+            clipEnabledZ = false;
+            
+            document.getElementById('clip-x-enabled').checked = false;
+            document.getElementById('clip-y-enabled').checked = false;
+            document.getElementById('clip-z-enabled').checked = false;
+            
+            document.getElementById('clip-x-slider').value = 50;
+            document.getElementById('clip-y-slider').value = 50;
+            document.getElementById('clip-z-slider').value = 50;
+            
+            document.getElementById('clip-x-slider').disabled = true;
+            document.getElementById('clip-y-slider').disabled = true;
+            document.getElementById('clip-z-slider').disabled = true;
+            
+            document.getElementById('clip-x-value').innerText = '50%';
+            document.getElementById('clip-y-value').innerText = '50%';
+            document.getElementById('clip-z-value').innerText = '50%';
+            
+            // Возвращаем плоскости в центр
+            if (modelBoundingBox) {
+                const center = modelBoundingBox.getCenter(new THREE.Vector3());
+                if (clipPlaneX) clipPlaneX.constant = -center.x;
+                if (clipPlaneY) clipPlaneY.constant = center.y;
+                if (clipPlaneZ) clipPlaneZ.constant = center.z;
+            }
+            
+            applyClipping();
         }
         
         function downloadModalContentAsPDF() {
@@ -1139,7 +1436,7 @@
             document.querySelectorAll('.btn-toggle').forEach(button => { 
                 button.addEventListener('click', function() { 
                     const layerName = this.getAttribute('data-layer'); 
-                    // Пропускаем кнопку призрака и single-row — у них своя логика
+                    // Пропускаем кнопки с собственной логикой (у них нет data-layer)
                     if (layerName) {
                         this.classList.toggle('active'); 
                         activePalettes[layerName] = this.classList.contains('active'); 
@@ -1151,33 +1448,67 @@
             document.getElementById('toggle-ui').addEventListener('click', function() { document.getElementById('control-panel').classList.toggle('hidden'); });
             document.getElementById('btn-download-pdf').addEventListener('click', downloadModalContentAsPDF);
 
-            // 👻 ПРИЗРАК СЛЕДУЮЩЕГО РЯДА
-            document.getElementById('btn-ghost').addEventListener('click', function() {
-                ghostEnabled = !ghostEnabled;
-                this.classList.toggle('active', ghostEnabled);
-                
-                // Если включаем призрак — выключаем 🎯
-                if (ghostEnabled && singleRowMode) {
-                    singleRowMode = false;
-                    document.getElementById('btn-single-row').classList.remove('active');
-                }
-                
-                updateVisibilityMatrix();
-            });
-
             // 🎯 ТОЛЬКО ВЫБРАННЫЙ РЯД
             document.getElementById('btn-single-row').addEventListener('click', function() {
                 singleRowMode = !singleRowMode;
                 this.classList.toggle('active', singleRowMode);
                 
-                // Если включаем 🎯 — выключаем 👻
-                if (singleRowMode && ghostEnabled) {
-                    ghostEnabled = false;
-                    document.getElementById('btn-ghost').classList.remove('active');
+                // Взаимоисключение: если включаем 🎯 — выключаем разрез
+                if (singleRowMode && clipPanelOpen) {
+                    closeClipPanel();
                 }
                 
                 updateVisibilityMatrix();
             });
+
+            // ✂ РАЗРЕЗ МОДЕЛИ
+            document.getElementById('btn-clip').addEventListener('click', function() {
+                if (clipPanelOpen) {
+                    closeClipPanel();
+                } else {
+                    openClipPanel();
+                }
+            });
+            
+            // ✂ Закрытие панели разреза
+            document.getElementById('clip-panel-close').addEventListener('click', closeClipPanel);
+            
+            // ✂ Тумблеры осей
+            document.getElementById('clip-x-enabled').addEventListener('change', function() {
+                clipEnabledX = this.checked;
+                document.getElementById('clip-x-slider').disabled = !clipEnabledX;
+                applyClipping();
+            });
+            document.getElementById('clip-y-enabled').addEventListener('change', function() {
+                clipEnabledY = this.checked;
+                document.getElementById('clip-y-slider').disabled = !clipEnabledY;
+                applyClipping();
+            });
+            document.getElementById('clip-z-enabled').addEventListener('change', function() {
+                clipEnabledZ = this.checked;
+                document.getElementById('clip-z-slider').disabled = !clipEnabledZ;
+                applyClipping();
+            });
+            
+            // ✂ Слайдеры позиции
+            document.getElementById('clip-x-slider').addEventListener('input', function() {
+                const val = parseInt(this.value);
+                document.getElementById('clip-x-value').innerText = val + '%';
+                updateClipPlane('x', val);
+            });
+            document.getElementById('clip-y-slider').addEventListener('input', function() {
+                const val = parseInt(this.value);
+                document.getElementById('clip-y-value').innerText = val + '%';
+                updateClipPlane('y', val);
+            });
+            document.getElementById('clip-z-slider').addEventListener('input', function() {
+                const val = parseInt(this.value);
+                document.getElementById('clip-z-value').innerText = val + '%';
+                updateClipPlane('z', val);
+            });
+            
+            // ✂ Кнопка сброса
+            document.getElementById('clip-reset-btn').addEventListener('click', resetClipping);
 
             // ▶ АВТОПОВОРОТ КАМЕРЫ
             document.getElementById('btn-autorotate').addEventListener('click', function() {
@@ -1226,6 +1557,30 @@
                     }, 2000);
                 }
             });
+        }
+        
+        // ✂ Открытие панели разреза
+        function openClipPanel() {
+            clipPanelOpen = true;
+            document.getElementById('clip-panel').classList.add('active');
+            document.getElementById('btn-clip').classList.add('active');
+            
+            // Взаимоисключение: выключаем 🎯, если активен
+            if (singleRowMode) {
+                singleRowMode = false;
+                document.getElementById('btn-single-row').classList.remove('active');
+                updateVisibilityMatrix();
+            }
+        }
+        
+        // ✂ Закрытие панели разреза
+        function closeClipPanel() {
+            clipPanelOpen = false;
+            document.getElementById('clip-panel').classList.remove('active');
+            document.getElementById('btn-clip').classList.remove('active');
+            
+            // Сбрасываем клиппинг при закрытии
+            resetClipping();
         }
                 function animate() { 
             requestAnimationFrame(animate); 
