@@ -5,6 +5,8 @@
     <title>3D Плеер — Проект печи</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="fonts-base64.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -360,7 +362,94 @@
             background: #00aaff; color: #fff; border-color: #00aaff;
             box-shadow: 0 0 20px rgba(0, 170, 255, 0.4);
         }
+        /* ===== КНОПКА PDF-ЭКСПОРТА ===== */
+        #btn-export-pdf {
+            background: #28a745; color: #fff; border-color: #28a745;
+        }
+        #btn-export-pdf:hover {
+            background: #218838;
+        }
+        #btn-export-pdf:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #555;
+        }
 
+        /* ===== ПРОГРЕСС-БАР PDF-ЭКСПОРТА ===== */
+        #pdf-export-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #fff;
+        }
+        #pdf-export-overlay.active { display: flex; }
+        
+        #pdf-export-panel {
+            background: rgba(18, 18, 18, 0.95);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        
+        #pdf-export-panel h2 {
+            margin: 0 0 8px 0;
+            font-size: 22px;
+            color: #fff;
+        }
+        
+        #pdf-export-panel p {
+            margin: 0 0 24px 0;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        #pdf-export-progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        
+        #pdf-export-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff6b00, #e05e00);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        #pdf-export-status {
+            font-size: 13px;
+            color: #ccc;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        #pdf-export-cancel {
+            margin-top: 20px;
+            padding: 8px 20px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #ccc;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #pdf-export-cancel:hover {
+            border-color: #ff4d4d;
+            color: #ff4d4d;
+        }
         /* ===== АВТОПОВОРОТ КАМЕРЫ ===== */
         #btn-autorotate.active {
             background: #28a745; color: #fff; border-color: #28a745;
@@ -556,6 +645,7 @@
                 <button class="btn-toggle active" data-layer="palette_brick_refractory" data-tip="Шамот">⟐</button>
                 <button class="btn-toggle active" data-layer="palette_iron" data-tip="Литье и металл">⚙</button>
                 <button class="btn-toggle" id="btn-clip" data-tip="Разрез модели">✂</button>
+                <button class="btn-action" id="btn-export-pdf" data-tip="Экспорт всех рядов в PDF">📸</button>
                 <button class="btn-toggle" id="btn-single-row" data-tip="Только выбранный ряд">🎯</button>
                 <button class="btn-action" id="btn-autorotate" data-tip="Автоповорот камеры">▶</button>
                 <button class="btn-action" id="btn-screenshot" data-tip="Скриншот">⊡</button>
@@ -573,6 +663,21 @@
         </div>
         <div id="loading-bar">
             <div id="loading-progress"></div>
+        </div>
+    </div>
+    <!-- Оверлей PDF-экспорта -->
+    <div id="pdf-export-overlay">
+        <div id="pdf-export-panel">
+            <h2>📸 Экспорт всех рядов в PDF</h2>
+            <p>Пожалуйста, не закрывайте окно во время генерации</p>
+            
+            <div id="pdf-export-progress-bar">
+                <div id="pdf-export-progress-fill"></div>
+            </div>
+            
+            <div id="pdf-export-status">Подготовка...</div>
+            
+            <button id="pdf-export-cancel">Отменить</button>
         </div>
     </div>
 
@@ -620,6 +725,9 @@
         // ===== НОВОЕ: состояние функций =====
         let autorotateEnabled = false;
         let singleRowMode = false;   // 🎯 Показывать только выбранный ряд
+        // ===== PDF-ЭКСПОРТ =====
+        let pdfExportInProgress = false;
+        let pdfExportCancelled = false;
 
         // ===== НОВОЕ: КЛИППИНГ (разрез) =====
         let clipPlaneX = null;
@@ -1038,6 +1146,58 @@
             controls.target.copy(center);
             controls.update();
         }
+        // 🎥 Подгонка камеры под видимый ряд (для PDF-экспорта)
+function fitCameraToVisible(rowIndex) {
+    if (!model || !camera || !controls) return;
+
+    // Считаем bounding box только по видимым мешам текущего ряда
+    const box = new THREE.Box3();
+    let found = false;
+    model.traverse(node => {
+        if (!node.isMesh || !node.visible) return;
+        // Проверяем, что меш относится к текущему ряду (row_N)
+        let checkNode = node;
+        let isCurrentRow = false;
+        while (checkNode) {
+            const n = (checkNode.name || '').toLowerCase();
+            const m = n.match(/row_[_-]?0*(\d+)/);
+            if (m && parseInt(m[1]) === rowIndex) { isCurrentRow = true; break; }
+            checkNode = checkNode.parent;
+        }
+        if (!isCurrentRow) return;
+        box.expandByObject(node);
+        found = true;
+    });
+
+    // Если по ряду ничего не нашли (например, служебные меши) — fallback на всю модель
+    if (!found) box.setFromObject(model);
+
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Ракурс изометрии
+    const angleH = Math.PI / 4;
+    const angleV = Math.PI / 5;
+
+    // Считаем дистанцию с учётом ДИАГОНАЛИ bounding box
+    // Это гарантирует, что модель влезет при любом ракурсе
+    const diagonal = Math.sqrt(size.x * size.x + size.y * size.y + size.z * size.z);
+    const fovRad = camera.fov * (Math.PI / 180);
+    let cameraDistance = diagonal / (2 * Math.tan(fovRad / 2));
+    cameraDistance *= 1.15; // запас 15% (диагональ уже с запасом)
+
+    // Направление от центра к камере
+    const dirX = Math.cos(angleH) * Math.cos(angleV);
+    const dirY = Math.sin(angleV);
+    const dirZ = Math.sin(angleH) * Math.cos(angleV);
+
+    camera.position.x = center.x + cameraDistance * dirX;
+    camera.position.y = center.y + cameraDistance * dirY;
+    camera.position.z = center.z + cameraDistance * dirZ;
+
+    controls.target.copy(center);
+    controls.update();
+}
         
         // ====================================================================
         // ✂ СИСТЕМА КЛИППИНГА (РАЗРЕЗ МОДЕЛИ)
@@ -1243,6 +1403,549 @@
                 alert('Не удалось сгенерировать PDF.');
             });
         }
+                // ====================================================================
+        // 📸 ЭКСПОРТ ВСЕХ РЯДОВ В PDF
+        // ====================================================================
+        
+        // ====================================================================
+        // 📸 ЭКСПОРТ ВСЕХ РЯДОВ В PDF (v2 - исправленная)
+        // ====================================================================
+        
+        async function exportAllRowsToPDF() {
+            if (pdfExportInProgress) return;
+            pdfExportInProgress = true;
+            pdfExportCancelled = false;
+            
+            const overlay = document.getElementById('pdf-export-overlay');
+            const progressFill = document.getElementById('pdf-export-progress-fill');
+            const status = document.getElementById('pdf-export-status');
+            const cancelBtn = document.getElementById('pdf-export-cancel');
+            const exportBtn = document.getElementById('btn-export-pdf');
+            
+            const uiContainer = document.getElementById('ui-container');
+            const clipPanel = document.getElementById('clip-panel');
+            const branding = document.getElementById('branding');
+            const loadingContainer = document.getElementById('loading-container');
+            
+            const savedUI = uiContainer.style.display;
+            const savedClip = clipPanel.style.display;
+            const savedBranding = branding.style.display;
+            const savedLoading = loadingContainer.style.display;
+            
+            overlay.classList.add('active');
+            progressFill.style.width = '0%';
+            progressFill.style.background = 'linear-gradient(90deg, #ff6b00, #e05e00)';
+            status.innerText = 'Подготовка...';
+            exportBtn.disabled = true;
+            
+            let savedRow = currentRenderedRow;
+            let savedSingleRow = singleRowMode;
+            let savedAutorotate = autorotateEnabled;
+            let savedClipEnabled = { x: clipEnabledX, y: clipEnabledY, z: clipEnabledZ };
+            let originalWidth = renderer.domElement.width;
+            let originalHeight = renderer.domElement.height;
+            
+            const cancelHandler = () => {
+                pdfExportCancelled = true;
+                status.innerText = 'Отмена...';
+            };
+            cancelBtn.addEventListener('click', cancelHandler);
+            
+            try {
+                // ===== ПОДГОТОВКА =====
+                if (autorotateEnabled) controls.autoRotate = false;
+                if (clipEnabledX || clipEnabledY || clipEnabledZ) {
+                    clipEnabledX = false; clipEnabledY = false; clipEnabledZ = false;
+                    applyClipping();
+                }
+                singleRowMode = false;
+                
+                uiContainer.style.display = 'none';
+                clipPanel.style.display = 'none';
+                branding.style.display = 'none';
+                loadingContainer.style.display = 'none';
+                
+                await new Promise(r => setTimeout(r, 150));
+                
+                // ===== PDF =====
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4', true);
+                pdf.deletePage(1);
+
+                // ===== КИРИЛЛИЧЕСКИЕ ШРИФТЫ PT SANS =====
+                pdf.addFileToVFS('PTSans-Regular.ttf', window.PTSANS_REGULAR_BASE64);
+                pdf.addFont('PTSans-Regular.ttf', 'PTSans', 'normal');
+                pdf.addFileToVFS('PTSans-Bold.ttf', window.PTSANS_BOLD_BASE64);
+                pdf.addFont('PTSans-Bold.ttf', 'PTSans', 'bold');
+                pdf.setFont('PTSans', 'normal');
+                
+                const pdfWidth = 210;
+                const pdfHeight = 297;
+                const projectTitle = document.getElementById('project-title').innerText || 'Проект';
+                const today = new Date().toLocaleDateString('ru-RU');
+                
+                const SCREENSHOT_W = 960;
+                const SCREENSHOT_H = 960;
+                
+                // ============= СТРАНИЦА 1 — ОБЛОЖКА =============
+                status.innerText = 'Генерация обложки...';
+                progressFill.style.width = '2%';
+                await new Promise(r => setTimeout(r, 50));
+                
+                pdf.addPage();
+                pdf.setFillColor(30, 30, 30);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                pdf.setFillColor(255, 107, 0);
+                pdf.rect(0, 0, pdfWidth, 8, 'F');
+                
+                const logoImg = document.getElementById('project-logo');
+                if (logoImg && logoImg.src && logoImg.style.display !== 'none') {
+                    try {
+                        const logoDataURL = await imageToDataURL(logoImg.src);
+                        pdf.addImage(logoDataURL, 'PNG', 15, 20, 30, 30);
+                    } catch(e) { console.warn('Логотип не загружен:', e); }
+                }
+                
+                pdf.setTextColor(255, 107, 0);
+                pdf.setFontSize(14);
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('ПЕЧНЫХ ДЕЛ МАСТЕР', 15, 60);
+                
+                pdf.setTextColor(136, 136, 136);
+                pdf.setFontSize(9);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('Инженерные традиции · Работа на поколения', 15, 66);
+                
+                pdf.setTextColor(180, 180, 180);
+                pdf.setFontSize(8);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('ПРОЕКТ БАРБЕКЮ-КОМПЛЕКСА', 15, 88);
+
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(26);
+                pdf.setFont('PTSans', 'bold');
+                const titleLines = pdf.splitTextToSize(projectTitle, 180);
+                pdf.text(titleLines, 15, 100);
+                
+                pdf.setTextColor(200, 200, 200);
+                pdf.setFontSize(13);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('Порядовое руководство по кладке', 15, 100 + (titleLines.length * 12));
+                
+                pdf.setDrawColor(255, 107, 0);
+                pdf.setLineWidth(0.5);
+                pdf.line(15, 140, 195, 140);
+                
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(11);
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('Дата создания:', 15, 150);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text(today, 60, 150);
+                
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('Всего рядов:', 15, 158);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text(String(maxRows), 60, 158);
+                
+                if (currentSpecData) {
+                    pdf.setFontSize(12);
+                    pdf.setFont('PTSans', 'bold');
+                    pdf.setTextColor(255, 107, 0);
+                    pdf.text('СПЕЦИФИКАЦИЯ МАТЕРИАЛОВ', 15, 175);
+                    
+                    pdf.setFontSize(9);
+                    pdf.setTextColor(200, 200, 200);
+                    pdf.setFont('PTSans', 'normal');
+                    
+                    let specY = 183;
+                    const lineH = 6;
+                    
+                    let tLF = 0, tDark = 0, tBuilding = 0, tRef = 0;
+                    if (currentSpecData["Лицевой светлый"]) for (const [_, d] of Object.entries(currentSpecData["Лицевой светлый"])) tLF += d.qty;
+                    if (currentSpecData["Лицевой тёмный"]) for (const [_, d] of Object.entries(currentSpecData["Лицевой тёмный"])) tDark += d.qty;
+                    if (currentSpecData["Забутовка"]) for (const [_, d] of Object.entries(currentSpecData["Забутовка"])) tBuilding += d.qty;
+                    if (currentSpecData["Шамот"]) for (const [_, d] of Object.entries(currentSpecData["Шамот"])) tRef += d.qty;
+                    
+                    pdf.text(`• Кирпич лицевой светлый: ${tLF} шт.`, 20, specY); specY += lineH;
+                    pdf.text(`• Кирпич лицевой тёмный: ${tDark} шт.`, 20, specY); specY += lineH;
+                    pdf.text(`• Кирпич строительный: ${tBuilding} шт.`, 20, specY); specY += lineH;
+                    pdf.text(`• Кирпич шамотный ШБ-8: ${tRef} шт.`, 20, specY); specY += lineH;
+                    pdf.text(`• Цементно-песчаная М150: ${Math.round((tLF + tDark + tBuilding) * 1.1)} кг`, 20, specY); specY += lineH;
+                    pdf.text(`• Огнеупорный мертель: ${Math.round(tRef * 0.6)} кг`, 20, specY);
+                }
+                
+                pdf.setFillColor(255, 107, 0);
+                pdf.rect(0, pdfHeight - 8, pdfWidth, 8, 'F');
+                pdf.setTextColor(136, 136, 136);
+                pdf.setFontSize(8);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('pechnik-novosib.ru · master-pechi@mail.ru · +7 (913) 894-10-74', pdfWidth / 2, pdfHeight - 15, { align: 'center' });
+                // ===== QR-КОД НА ПЛЕЕР (в правом нижнем углу обложки) =====
+try {
+    const currentCode = document.getElementById('access-code').value.trim();
+    if (currentCode) {
+        const baseUrl = window.location.href.split('#')[0];
+        const playerUrl = baseUrl + '#' + currentCode;
+        const qrDataURL = await generateQRCodeDataURL(playerUrl, 200);
+        
+        if (qrDataURL) {
+            pdf.setFontSize(7);
+            pdf.setFont('PTSans', 'normal');
+            pdf.setTextColor(150, 150, 150);
+            pdf.text('3D-МОДЕЛЬ', 175, pdfHeight - 55, { align: 'center' });
+            
+            pdf.addImage(qrDataURL, 'PNG', 165, pdfHeight - 50, 20, 20);
+            
+            pdf.setFontSize(6);
+            pdf.setTextColor(120, 120, 120);
+            pdf.text('Наведите камеру', 175, pdfHeight - 27, { align: 'center' });
+        }
+    }
+} catch(e) {
+    console.warn('QR-код на обложку не добавлен:', e);
+}
+                
+                // ============= СТРАНИЦА 2 — СОДЕРЖАНИЕ =============
+                if (pdfExportCancelled) throw new Error('cancelled');
+                status.innerText = 'Генерация содержания...';
+                progressFill.style.width = '4%';
+                await new Promise(r => setTimeout(r, 50));
+                
+                pdf.addPage();
+                pdf.setFillColor(255, 255, 255);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                
+                pdf.setTextColor(30, 30, 30);
+                pdf.setFontSize(20);
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('СОДЕРЖАНИЕ', 15, 25);
+                
+                pdf.setDrawColor(255, 107, 0);
+                pdf.setLineWidth(0.8);
+                pdf.line(15, 30, 195, 30);
+                
+                pdf.setFontSize(10);
+                pdf.setFont('PTSans', 'normal');
+                pdf.setTextColor(60, 60, 60);
+                
+                const rowsPerCol = 27;
+                const colX = [15, 110];
+for (let i = 1; i <= maxRows; i++) {
+    const col = i <= rowsPerCol ? 0 : 1;
+    const row = i <= rowsPerCol ? i : i - rowsPerCol;
+    const x = colX[col];
+    const y = 45 + (row - 1) * 8;
+    const pageNum = i + 2;
+    
+    // 🔗 Кликабельная ссылка на страницу порядовки
+    pdf.textWithLink(`Ряд ${String(i).padStart(2, '0')}`, x, y, { pageNumber: pageNum });
+    pdf.text('...............', x + 25, y);
+    pdf.textWithLink(String(pageNum), x + 55, y, { pageNumber: pageNum });
+}
+                
+                    // ============= СТРАНИЦЫ 3+ — ПОРЯДОВКИ =============
+                    renderer.setSize(SCREENSHOT_W, SCREENSHOT_H);
+                    camera.aspect = SCREENSHOT_W / SCREENSHOT_H;
+                    camera.updateProjectionMatrix();
+                    await new Promise(r => setTimeout(r, 200));
+                
+                for (let i = 1; i <= maxRows; i++) {
+                    if (pdfExportCancelled) throw new Error('cancelled');
+                    
+                    status.innerText = `Захват ряда ${i} из ${maxRows}...`;
+                    progressFill.style.width = (4 + (i / maxRows) * 92) + '%';
+                    
+                    currentRenderedRow = i;
+                    updateVisibilityMatrix();
+
+                    controls.update();
+
+                    // 🎥 Подгоняем камеру под видимую геометрию текущего ряда
+                    fitCameraToVisible(i);
+
+                    renderer.render(scene, camera);
+                    
+                    await new Promise(r => setTimeout(r, 80));
+                    
+                    const dataURL = renderer.domElement.toDataURL('image/jpeg', 0.85);
+                    
+                    pdf.addPage();
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                    
+                    pdf.setFillColor(30, 30, 30);
+                    pdf.rect(0, 0, pdfWidth, 18, 'F');
+                    
+                    pdf.setTextColor(255, 107, 0);
+                    pdf.setFontSize(11);
+                    pdf.setFont('PTSans', 'bold');
+                    pdf.text('Ряд ' + String(i).padStart(2, '0'), 15, 12);
+                    
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(9);
+                    pdf.setFont('PTSans', 'normal');
+                    pdf.text(projectTitle, pdfWidth - 40, 12, { align: 'right' });
+
+// Бейдж с номером — оранжевый, как "Ряд N"
+pdf.setFillColor(255, 107, 0);
+pdf.roundedRect(pdfWidth - 32, 6.5, 22, 5.5, 1.2, 1.2, 'F');
+
+pdf.setTextColor(255, 255, 255);
+pdf.setFontSize(8);
+pdf.setFont('PTSans', 'bold');
+pdf.text(`${i} / ${maxRows}`, pdfWidth - 21, 10.3, { align: 'center' });
+                    
+                    const imgW = 180;
+                    const imgH = 175;
+                    const imgX = 15;
+                    const imgY = 22;
+                    
+                    try {
+                        pdf.addImage(dataURL, 'JPEG', imgX, imgY, imgW, imgH, undefined, 'FAST');
+                    } catch(e) {
+                        console.warn(`Скриншот ряда ${i} не добавлен:`, e);
+                    }
+                    
+                    pdf.setDrawColor(255, 107, 0);
+                    pdf.setLineWidth(0.4);
+                    pdf.line(imgX, imgY + imgH + 1, imgX + imgW, imgY + imgH + 1);
+                    
+const noteY = imgY + imgH + 15;
+pdf.setFillColor(250, 247, 242);
+pdf.rect(15, noteY, 180, 50, 'F');
+
+pdf.setDrawColor(255, 107, 0);
+pdf.setLineWidth(0.5);
+pdf.setLineDashPattern([2, 2], 0);
+pdf.rect(15, noteY, 180, 50);
+pdf.setLineDashPattern([], 0);
+
+pdf.setTextColor(255, 107, 0);
+pdf.setFontSize(10);
+pdf.setFont('PTSans', 'bold');
+pdf.text('ПРИМЕЧАНИЕ К РЯДУ', 20, noteY + 8);
+
+pdf.setTextColor(150, 150, 150);
+pdf.setFontSize(9);
+pdf.setFont('PTSans', 'normal');
+pdf.text('(место для заметок мастера)', 20, noteY + 15);
+
+// ===== Линии для записей =====
+pdf.setDrawColor(220, 210, 195);
+pdf.setLineWidth(0.2);
+pdf.setLineDashPattern([1, 2], 0);
+for (let li = 1; li <= 3; li++) {
+    const lineY = noteY + 22 + li * 7;
+    pdf.line(20, lineY, 190, lineY);
+}
+pdf.setLineDashPattern([], 0);
+
+                   // ===== ЛЕГЕНДА МАТЕРИАЛОВ (над примечанием) =====
+                    const legendY = noteY + 46;
+                    const legendItems = [
+                    { color: [74, 74, 74], label: 'Лицевой тёмный' },
+                    { color: [220, 200, 140], label: 'Шамот' },
+                    { color: [180, 80, 60], label: 'Лицевой светлый' },
+                    { color: [200, 120, 80], label: 'Забутовка' }
+                 ];
+                    let lx = 20;
+                    legendItems.forEach(item => {
+                    pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+                    pdf.rect(lx, legendY - 2, 3, 3, 'F');
+                    pdf.setTextColor(90, 90, 90);
+                    pdf.setFontSize(7);
+                    pdf.setFont('PTSans', 'normal');
+                    pdf.text(item.label, lx + 4, legendY);
+                    lx += 4 + pdf.getTextWidth(item.label) + 6;
+             });
+                    
+pdf.setTextColor(150, 150, 150);
+pdf.setFontSize(8);
+pdf.setFont('PTSans', 'normal');
+pdf.text(`Печных дел Мастер · ${today}`, 15, pdfHeight - 10);
+
+// 📊 Мини-прогресс-бар (показывает, сколько рядов уже пройдено)
+const barX = 95;
+const barY = pdfHeight - 13;
+const barW = 30;
+const barH = 2;
+const barFill = (i / maxRows) * barW;
+pdf.setFillColor(220, 220, 220);
+pdf.rect(barX, barY, barW, barH, 'F');
+pdf.setFillColor(255, 107, 0);
+pdf.rect(barX, barY, barFill, barH, 'F');
+
+pdf.text(`Стр. ${i + 2} из ${maxRows + 3}`, pdfWidth - 15, pdfHeight - 10, { align: 'right' });
+                }
+                
+                renderer.setSize(originalWidth, originalHeight);
+                onWindowResize();
+                fitCameraToModel(); // вернуть общий ракурс
+                await new Promise(r => setTimeout(r, 200));
+                
+                // ============= ПОСЛЕДНЯЯ СТРАНИЦА =============
+                status.innerText = 'Финальная страница...';
+                progressFill.style.width = '98%';
+                await new Promise(r => setTimeout(r, 50));
+                
+                pdf.addPage();
+                pdf.setFillColor(30, 30, 30);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                pdf.setFillColor(255, 107, 0);
+                pdf.rect(0, 0, pdfWidth, 8, 'F');
+                pdf.rect(0, pdfHeight - 8, pdfWidth, 8, 'F');
+                
+                pdf.setTextColor(255, 107, 0);
+                pdf.setFontSize(24);
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('СПАСИБО ЗА ПОКУПКУ!', pdfWidth / 2, 60, { align: 'center' });
+                
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(12);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('Мы всегда рады помочь', pdfWidth / 2, 75, { align: 'center' });
+                
+                pdf.setDrawColor(255, 107, 0);
+                pdf.setLineWidth(0.5);
+                pdf.line(60, 90, 150, 90);
+                
+                pdf.setTextColor(255, 107, 0);
+                pdf.setFontSize(14);
+                pdf.setFont('PTSans', 'bold');
+                pdf.text('СВЯЖИТЕСЬ С НАМИ', pdfWidth / 2, 105, { align: 'center' });
+                
+                pdf.setTextColor(200, 200, 200);
+                pdf.setFontSize(11);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('+7 (913) 894-10-74', pdfWidth / 2, 120, { align: 'center' });
+                pdf.text('master-pechi@mail.ru', pdfWidth / 2, 130, { align: 'center' });
+                pdf.text('pechnik-novosib.ru', pdfWidth / 2, 140, { align: 'center' });
+                
+                pdf.setTextColor(150, 150, 150);
+                pdf.setFontSize(9);
+                pdf.setFont('PTSans', 'normal');
+                pdf.text('Печных дел Мастер — инженерные традиции', pdfWidth / 2, 180, { align: 'center' });
+                pdf.text('Работа на поколения', pdfWidth / 2, 187, { align: 'center' });
+                
+                // ============= СОХРАНЕНИЕ =============
+                status.innerText = 'Сохранение файла...';
+                progressFill.style.width = '100%';
+                await new Promise(r => setTimeout(r, 100));
+                
+                const safeTitle = projectTitle.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
+                const fileName = `${safeTitle}_Порядовка_${today.replace(/\./g, '-')}.pdf`;
+                
+                pdf.save(fileName);
+                
+                status.innerText = '✅ PDF успешно создан!';
+                progressFill.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+                await new Promise(r => setTimeout(r, 1500));
+                
+            } catch (err) {
+                if (err.message === 'cancelled') {
+                    status.innerText = '❌ Экспорт отменён';
+                } else {
+                    console.error('Ошибка PDF-экспорта:', err);
+                    status.innerText = '❌ Ошибка: ' + err.message;
+                }
+                await new Promise(r => setTimeout(r, 2500));
+            } finally {
+                try {
+                    uiContainer.style.display = savedUI || '';
+                    clipPanel.style.display = savedClip || '';
+                    branding.style.display = savedBranding || '';
+                    loadingContainer.style.display = savedLoading || '';
+                    
+                    if (renderer && renderer.domElement) {
+                        renderer.setSize(originalWidth, originalHeight);
+                        onWindowResize();
+                    }
+                    
+                    currentRenderedRow = savedRow;
+                    singleRowMode = savedSingleRow;
+                    autorotateEnabled = savedAutorotate;
+                    
+                    if (autorotateEnabled && controls) {
+                        controls.autoRotate = true;
+                    }
+                    if (savedClipEnabled.x || savedClipEnabled.y || savedClipEnabled.z) {
+                        clipEnabledX = savedClipEnabled.x;
+                        clipEnabledY = savedClipEnabled.y;
+                        clipEnabledZ = savedClipEnabled.z;
+                        applyClipping();
+                    }
+                    
+                    if (model) updateVisibilityMatrix();
+                } catch(e) {
+                    console.error('Ошибка восстановления UI:', e);
+                }
+                
+                overlay.classList.remove('active');
+                progressFill.style.width = '0%';
+                progressFill.style.background = 'linear-gradient(90deg, #ff6b00, #e05e00)';
+                exportBtn.disabled = false;
+                pdfExportInProgress = false;
+                pdfExportCancelled = false;
+                cancelBtn.removeEventListener('click', cancelHandler);
+            }
+        }
+        
+        // Вспомогательная функция — конвертирует URL картинки в dataURL (для логотипа)
+        async function imageToDataURL(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+        // 📱 Генерация QR-кода как dataURL (PNG)
+function generateQRCodeDataURL(text, size = 256) {
+    return new Promise((resolve) => {
+        try {
+            const qr = qrcode(0, 'M');
+            qr.addData(text);
+            qr.make();
+            
+            // qrcode-generator может выдать SVG или canvas напрямую
+            const modules = qr.getModuleCount();
+            const cellSize = Math.floor(size / modules);
+            const actualSize = cellSize * modules;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = actualSize;
+            canvas.height = actualSize;
+            const ctx = canvas.getContext('2d');
+            
+            // Белый фон
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, actualSize, actualSize);
+            
+            // Чёрные модули
+            ctx.fillStyle = '#1E1E1E';
+            for (let row = 0; row < modules; row++) {
+                for (let col = 0; col < modules; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+            
+            resolve(canvas.toDataURL('image/png'));
+        } catch(e) {
+            console.warn('QR-код не сгенерирован:', e);
+            resolve(null);
+        }
+    });
+}
                 function initInterfaceListeners() {
             document.getElementById('btn-plus').addEventListener('click', () => { 
                 if (currentRenderedRow < maxRows) { 
@@ -1469,9 +2172,16 @@
                     openClipPanel();
                 }
             });
+                        // 📸 ЭКСПОРТ ВСЕХ РЯДОВ В PDF
+            document.getElementById('btn-export-pdf').addEventListener('click', function() {
+                if (pdfExportInProgress) return;
+                exportAllRowsToPDF();
+            });
             
             // ✂ Закрытие панели разреза
             document.getElementById('clip-panel-close').addEventListener('click', closeClipPanel);
+                        // 📸 Блокируем закрытие панели разреза во время экспорта
+            // (не критично, но помогает избежать багов)
             
             // ✂ Тумблеры осей
             document.getElementById('clip-x-enabled').addEventListener('change', function() {
