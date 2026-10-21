@@ -1,336 +1,368 @@
-[MODEL_TITLE] : Эркер 2070-ХП
+[MODEL_TITLE] : 3240-МКВ-тест
 =====================================================================================
- TOTAL PRODUCTION SPECIFICATION REPORT (COMPONENT SYSTEM v77.78) 
+ TOTAL PRODUCTION SPECIFICATION REPORT (v78.1) 
 =====================================================================================
  PRODUCTION ROW | FACTORY SKU / ELEMENT ID  | FORMAT TYPE     | QTY (PCS) 
 -------------------------------------------------------------------------------------
- row_01         | LF-179-ST                 | FULL (1.0)      | 1         
- row_01         | LF-250-ST                 | FULL (1.0)      | 52        
- row_01         | LF-49-ST                  | HALF (0.5)      | 1         
- row_01         | SP-180-ST                 | FULL (1.0)      | 3         
- row_01         | SP-250-ST                 | FULL (1.0)      | 81        
- row_01         | SP-50-ST                  | HALF (0.5)      | 3         
- row_02         | LF-120-ST                 | HALF (0.5)      | 4         
- row_02         | LF-179-ST                 | FULL (1.0)      | 1         
- row_02         | LF-250-ST                 | FULL (1.0)      | 51        
- row_02         | LF-49-ST                  | HALF (0.5)      | 2         
- row_02         | SP-250-ST                 | FULL (1.0)      | 25        
- row_03         | LF-120-ST                 | HALF (0.5)      | 3         
- row_03         | LF-179-ST                 | FULL (1.0)      | 2         
- row_03         | LF-250-ST                 | FULL (1.0)      | 50        
- row_03         | LF-49-ST                  | HALF (0.5)      | 1         
- row_03         | SP-120-ST                 | HALF (0.5)      | 2         
- row_03         | SP-250-ST                 | FULL (1.0)      | 21        
- row_04         | LF-120-ST                 | HALF (0.5)      | 6         
- row_04         | LF-179-ST                 | FULL (1.0)      | 1         
- row_04         | LF-250-ST                 | FULL (1.0)      | 49        
- row_04         | LF-49-ST                  | HALF (0.5)      | 2         
- row_04         | SP-250-ST                 | FULL (1.0)      | 22        
- row_05         | LF-120-ST                 | HALF (0.5)      | 3         
- row_05         | LF-179-ST                 | FULL (1.0)      | 2         
- row_05         | LF-250-ST                 | FULL (1.0)      | 51        
- row_05         | LF-49-ST                  | HALF (0.5)      | 1         
- row_05         | SP-120-ST                 | HALF (0.5)      | 2         
- row_05         | SP-250-ST                 | FULL (1.0)      | 22        
- row_06         | LF-120-ST                 | HALF (0.5)      | 4         
- row_06         | LF-179-ST                 | FULL (1.0)      | 1         
- row_06         | LF-250-ST                 | FULL (1.0)      | 51        
- row_06         | LF-49-ST                  | HALF (0.5)      | 2         
+ row_01         | LF-120-ST                 | HALF (0.5)      | 2         
+ row_01         | LF-250-ST                 | FULL (1.0)      | 31        
+ row_01         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_01         | SP-250-ST                 | FULL (1.0)      | 57        
+ row_02         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_02         | LF-250-ST                 | FULL (1.0)      | 33        
+ row_02         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_02         | SP-250-ST                 | FULL (1.0)      | 26        
+ row_03         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_03         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_03         | LF-250-ST                 | FULL (1.0)      | 31        
+ row_03         | SP-120-ST                 | HALF (0.5)      | 3         
+ row_03         | SP-250-ST                 | FULL (1.0)      | 22        
+ row_04         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_04         | LF-250-ST                 | FULL (1.0)      | 32        
+ row_04         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_04         | SP-250-ST                 | FULL (1.0)      | 23        
+ row_05         | LF-120-ST                 | HALF (0.5)      | 2         
+ row_05         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_05         | LF-250-ST                 | FULL (1.0)      | 33        
+ row_05         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_05         | SP-250-ST                 | FULL (1.0)      | 24        
+ row_06         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_06         | LF-250-ST                 | FULL (1.0)      | 33        
  row_06         | SH8-250-ST                | FULL (1.0)      | 6         
- row_06         | SP-250-ST                 | FULL (1.0)      | 17        
- row_07         | LF-120-ST                 | HALF (0.5)      | 3         
- row_07         | LF-179-ST                 | FULL (1.0)      | 2         
- row_07         | LF-250-ST                 | FULL (1.0)      | 50        
- row_07         | LF-49-ST                  | HALF (0.5)      | 1         
- row_07         | SP-120-ST                 | HALF (0.5)      | 2         
- row_07         | SP-250-ST                 | FULL (1.0)      | 16        
- row_08         | LF-120-ST                 | HALF (0.5)      | 6         
- row_08         | LF-179-ST                 | FULL (1.0)      | 1         
- row_08         | LF-250-ST                 | FULL (1.0)      | 49        
- row_08         | LF-49-ST                  | HALF (0.5)      | 2         
- row_08         | SH8-214-ST                | FULL (1.0)      | 12        
- row_08         | SP-250-ST                 | FULL (1.0)      | 17        
- row_09         | LF-120-ST                 | HALF (0.5)      | 3         
- row_09         | LF-140-ST                 | FULL (1.0)      | 14        
- row_09         | LF-179-ST                 | FULL (1.0)      | 2         
- row_09         | LF-250-ST                 | FULL (1.0)      | 41        
- row_09         | LF-49-ST                  | HALF (0.5)      | 1         
- row_09         | SP-120-ST                 | HALF (0.5)      | 6         
- row_09         | SP-250-ST                 | FULL (1.0)      | 33        
- row_09         | SP-55-ST                  | HALF (0.5)      | 4         
- row_10         | LF-120-ST                 | HALF (0.5)      | 6         
- row_10         | LF-179-ST                 | FULL (1.0)      | 1         
- row_10         | LF-250-ST                 | FULL (1.0)      | 41        
- row_10         | LF-49-ST                  | HALF (0.5)      | 2         
+ row_06         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_06         | SP-250-ST                 | FULL (1.0)      | 18        
+ row_07         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_07         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_07         | LF-250-ST                 | FULL (1.0)      | 31        
+ row_07         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_07         | SP-250-ST                 | FULL (1.0)      | 18        
+ row_08         | LF-120-ST                 | HALF (0.5)      | 5         
+ row_08         | LF-140-ST                 | FULL (1.0)      | 14        
+ row_08         | LF-250-ST                 | FULL (1.0)      | 31        
+ row_08         | SH8-214-ST                | FULL (1.0)      | 10        
+ row_08         | SH8-250-ST                | FULL (1.0)      | 2         
+ row_08         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_08         | SP-250-ST                 | FULL (1.0)      | 18        
+ row_09         | LF-120-ST                 | HALF (0.5)      | 5         
+ row_09         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_09         | LF-250-ST                 | FULL (1.0)      | 32        
+ row_09         | SP-212-ST                 | FULL (1.0)      | 2         
+ row_09         | SP-250-ST                 | FULL (1.0)      | 20        
+ row_09         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_10         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_10         | LF-250-ST                 | FULL (1.0)      | 29        
  row_10         | SH8-122-ST                | HALF (0.5)      | 2         
- row_10         | SH8-246-ST                | FULL (1.0)      | 1         
- row_10         | SH8-250-ST                | FULL (1.0)      | 5         
- row_10         | SP-120-ST                 | HALF (0.5)      | 3         
- row_10         | SP-250-ST                 | FULL (1.0)      | 33        
- row_11         | LF-120-ST                 | HALF (0.5)      | 1         
- row_11         | LF-179-ST                 | FULL (1.0)      | 1         
- row_11         | LF-250-ST                 | FULL (1.0)      | 46        
- row_11         | LF-49-ST                  | HALF (0.5)      | 1         
- row_11         | SP-105-ST                 | HALF (0.5)      | 2         
- row_11         | SP-120-ST                 | HALF (0.5)      | 7         
- row_11         | SP-235-ST                 | FULL (1.0)      | 2         
- row_11         | SP-250-ST                 | FULL (1.0)      | 69        
- row_11         | SP-50-ST                  | HALF (0.5)      | 1         
- row_11         | SP-75-ST                  | HALF (0.5)      | 1         
- row_12         | LF-179-ST                 | FULL (1.0)      | 1         
- row_12         | LF-185-ST                 | FULL (1.0)      | 1         
- row_12         | LF-250-ST                 | FULL (1.0)      | 50        
- row_12         | LF-49-ST                  | HALF (0.5)      | 1         
- row_12         | SH8-116-ST                | HALF (0.5)      | 2         
- row_12         | SH8-250-ST                | FULL (1.0)      | 26        
- row_12         | SP-120-ST                 | HALF (0.5)      | 3         
- row_12         | SP-180-ST                 | FULL (1.0)      | 3         
- row_12         | SP-250-ST                 | FULL (1.0)      | 49        
- row_12         | SP-50-ST                  | HALF (0.5)      | 3         
- row_12         | SP-55-ST                  | HALF (0.5)      | 12        
+ row_10         | SH8-183-ST                | FULL (1.0)      | 1         
+ row_10         | SH8-249-ST                | FULL (1.0)      | 1         
+ row_10         | SH8-250-ST                | FULL (1.0)      | 4         
+ row_10         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_10         | SP-135-ST                 | FULL (1.0)      | 1         
+ row_10         | SP-175-ST                 | FULL (1.0)      | 1         
+ row_10         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_10         | SP-235-ST                 | FULL (1.0)      | 2         
+ row_10         | SP-250-ST                 | FULL (1.0)      | 28        
+ row_11         | LF-120-ST                 | HALF (0.5)      | 2         
+ row_11         | LF-250-ST                 | FULL (1.0)      | 30        
+ row_11         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_11         | SP-212-ST                 | FULL (1.0)      | 2         
+ row_11         | SP-220-ST                 | FULL (1.0)      | 4         
+ row_11         | SP-250-ST                 | FULL (1.0)      | 42        
+ row_11         | SP-55-ST                  | HALF (0.5)      | 6         
+ row_12         | LF-250-ST                 | FULL (1.0)      | 31        
+ row_12         | SH8-116-ST                | HALF (0.5)      | 1         
+ row_12         | SH8-124-ST                | HALF (0.5)      | 2         
+ row_12         | SH8-177-ST                | FULL (1.0)      | 1         
+ row_12         | SH8-183-ST                | FULL (1.0)      | 1         
+ row_12         | SH8-185-ST                | FULL (1.0)      | 1         
+ row_12         | SH8-250-ST                | FULL (1.0)      | 25        
+ row_12         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_12         | SP-165-ST                 | FULL (1.0)      | 2         
+ row_12         | SP-250-ST                 | FULL (1.0)      | 30        
+ row_12         | SP-55-ST                  | HALF (0.5)      | 1         
  row_13         | LF-120-ST                 | HALF (0.5)      | 1         
  row_13         | LF-185-ST                 | FULL (1.0)      | 1         
- row_13         | LF-250-ST                 | FULL (1.0)      | 22        
- row_13         | SH8-250-ST                | FULL (1.0)      | 11        
- row_13         | SP-120-ST                 | HALF (0.5)      | 1         
- row_13         | SP-250-ST                 | FULL (1.0)      | 19        
- row_14         | LF-250-ST                 | FULL (1.0)      | 20        
- row_14         | SH8-250-ST                | FULL (1.0)      | 26        
+ row_13         | LF-250-ST                 | FULL (1.0)      | 23        
+ row_13         | SH8-250-ST                | FULL (1.0)      | 12        
+ row_13         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_13         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_13         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_14         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_14         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_14         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_14         | SH8-250-ST                | FULL (1.0)      | 12        
  row_14         | SP-120-ST                 | HALF (0.5)      | 1         
- row_14         | SP-250-ST                 | FULL (1.0)      | 4         
- row_15         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_14         | SP-250-ST                 | FULL (1.0)      | 3         
+ row_14         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_15         | LF-120-ST                 | HALF (0.5)      | 4         
  row_15         | LF-185-ST                 | FULL (1.0)      | 1         
  row_15         | LF-250-ST                 | FULL (1.0)      | 18        
- row_15         | SH8-124-ST                | HALF (0.5)      | 2         
- row_15         | SH8-250-ST                | FULL (1.0)      | 12        
- row_15         | SH8-61-ST                 | HALF (0.5)      | 2         
- row_15         | SP-120-ST                 | HALF (0.5)      | 3         
- row_15         | SP-250-ST                 | FULL (1.0)      | 3         
- row_16         | LF-250-ST                 | FULL (1.0)      | 21        
- row_16         | SH8-124-ST                | HALF (0.5)      | 2         
- row_16         | SH8-250-ST                | FULL (1.0)      | 9         
+ row_15         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_15         | SH8-250-ST                | FULL (1.0)      | 8         
+ row_15         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_15         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_15         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_16         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_16         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_16         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_16         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_16         | SH8-250-ST                | FULL (1.0)      | 8         
  row_16         | SP-120-ST                 | HALF (0.5)      | 1         
- row_16         | SP-250-ST                 | FULL (1.0)      | 4         
- row_17         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_16         | SP-250-ST                 | FULL (1.0)      | 3         
+ row_16         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_17         | LF-120-ST                 | HALF (0.5)      | 4         
  row_17         | LF-185-ST                 | FULL (1.0)      | 1         
- row_17         | LF-250-ST                 | FULL (1.0)      | 20        
- row_17         | SH8-124-ST                | HALF (0.5)      | 4         
+ row_17         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_17         | SH8-124-ST                | HALF (0.5)      | 1         
  row_17         | SH8-250-ST                | FULL (1.0)      | 8         
- row_17         | SP-120-ST                 | HALF (0.5)      | 3         
- row_17         | SP-250-ST                 | FULL (1.0)      | 3         
- row_18         | LF-250-ST                 | FULL (1.0)      | 20        
- row_18         | SH8-250-ST                | FULL (1.0)      | 11        
+ row_17         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_17         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_17         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_18         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_18         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_18         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_18         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_18         | SH8-250-ST                | FULL (1.0)      | 8         
  row_18         | SP-120-ST                 | HALF (0.5)      | 1         
- row_18         | SP-250-ST                 | FULL (1.0)      | 4         
- row_19         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_18         | SP-250-ST                 | FULL (1.0)      | 3         
+ row_18         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_19         | LF-120-ST                 | HALF (0.5)      | 4         
  row_19         | LF-185-ST                 | FULL (1.0)      | 1         
  row_19         | LF-250-ST                 | FULL (1.0)      | 18        
- row_19         | SH8-124-ST                | HALF (0.5)      | 2         
- row_19         | SH8-250-ST                | FULL (1.0)      | 9         
- row_19         | SH8-61-ST                 | HALF (0.5)      | 2         
- row_19         | SP-185-ST                 | FULL (1.0)      | 11        
- row_20         | LF-250-ST                 | FULL (1.0)      | 20        
- row_20         | SH8-124-ST                | HALF (0.5)      | 12        
+ row_19         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_19         | SH8-250-ST                | FULL (1.0)      | 8         
+ row_19         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_19         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_19         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_20         | LF-120-ST                 | HALF (0.5)      | 4         
+ row_20         | LF-140-ST                 | FULL (1.0)      | 14        
+ row_20         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_20         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_20         | SH8-124-ST                | HALF (0.5)      | 5         
  row_20         | SH8-187-ST                | FULL (1.0)      | 9         
- row_20         | SH8-250-ST                | FULL (1.0)      | 9         
- row_20         | SP-250-ST                 | FULL (1.0)      | 9         
- row_21         | LF-120-ST                 | HALF (0.5)      | 1         
- row_21         | LF-140-ST                 | FULL (1.0)      | 14        
+ row_20         | SH8-250-ST                | FULL (1.0)      | 13        
+ row_20         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_20         | SP-250-ST                 | FULL (1.0)      | 3         
+ row_20         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_21         | LF-120-ST                 | HALF (0.5)      | 2         
  row_21         | LF-185-ST                 | FULL (1.0)      | 1         
- row_21         | LF-250-ST                 | FULL (1.0)      | 18        
- row_21         | SH8-120-ST                | HALF (0.5)      | 2         
- row_21         | SH8-124-ST                | HALF (0.5)      | 2         
- row_21         | SH8-165-ST                | FULL (1.0)      | 15        
- row_21         | SH8-187-ST                | FULL (1.0)      | 9         
- row_21         | SH8-250-ST                | FULL (1.0)      | 4         
- row_21         | SP-185-ST                 | FULL (1.0)      | 2         
- row_21         | SP-250-ST                 | FULL (1.0)      | 8         
- row_21         | SP-55-ST                  | HALF (0.5)      | 6         
- row_22         | LF-120-ST                 | HALF (0.5)      | 2         
- row_22         | LF-250-ST                 | FULL (1.0)      | 18        
+ row_21         | LF-250-ST                 | FULL (1.0)      | 20        
+ row_21         | SH8-120-ST                | HALF (0.5)      | 1         
+ row_21         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_21         | SH8-165-ST                | FULL (1.0)      | 17        
+ row_21         | SH8-187-ST                | FULL (1.0)      | 10        
+ row_21         | SH8-250-ST                | FULL (1.0)      | 5         
+ row_21         | SH8-61-ST                 | HALF (0.5)      | 2         
+ row_21         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_21         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_21         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_22         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_22         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_22         | LF-250-ST                 | FULL (1.0)      | 22        
+ row_22         | SH8-124-ST                | HALF (0.5)      | 1         
  row_22         | SH8-250-ST                | FULL (1.0)      | 7         
- row_22         | SP-120-ST                 | HALF (0.5)      | 8         
- row_22         | SP-250-ST                 | FULL (1.0)      | 14        
+ row_22         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_22         | SP-250-ST                 | FULL (1.0)      | 3         
  row_22         | SP-55-ST                  | HALF (0.5)      | 1         
- row_23         | LF-120-ST                 | HALF (0.5)      | 1         
- row_23         | LF-250-ST                 | FULL (1.0)      | 28        
- row_23         | SH8-187-ST                | FULL (1.0)      | 6         
+ row_23         | LF-120-ST                 | HALF (0.5)      | 3         
+ row_23         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_23         | LF-250-ST                 | FULL (1.0)      | 22        
+ row_23         | SH8-187-ST                | FULL (1.0)      | 9         
  row_23         | SH8-250-ST                | FULL (1.0)      | 8         
- row_23         | SP-120-ST                 | HALF (0.5)      | 1         
- row_23         | SP-250-ST                 | FULL (1.0)      | 19        
+ row_23         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_23         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_23         | SP-250-ST                 | FULL (1.0)      | 2         
+ row_24         | LF-120-ST                 | HALF (0.5)      | 1         
  row_24         | LF-185-ST                 | FULL (1.0)      | 1         
- row_24         | LF-250-ST                 | FULL (1.0)      | 28        
- row_24         | SH8-124-ST                | HALF (0.5)      | 8         
- row_24         | SH8-182-ST                | FULL (1.0)      | 2         
- row_24         | SH8-187-ST                | FULL (1.0)      | 5         
- row_24         | SH8-250-ST                | FULL (1.0)      | 1         
- row_24         | SH8-61-ST                 | HALF (0.5)      | 4         
- row_24         | SP-120-ST                 | HALF (0.5)      | 4         
- row_24         | SP-185-ST                 | FULL (1.0)      | 2         
- row_24         | SP-250-ST                 | FULL (1.0)      | 16        
- row_25         | LF-205-ST                 | FULL (1.0)      | 7         
- row_25         | LF-250-ST                 | FULL (1.0)      | 19        
- row_25         | LF-55-ST                  | HALF (0.5)      | 7         
- row_25         | SH8-124-ST                | HALF (0.5)      | 6         
- row_25         | SH8-250-ST                | FULL (1.0)      | 6         
- row_25         | SP-120-ST                 | HALF (0.5)      | 5         
- row_25         | SP-250-ST                 | FULL (1.0)      | 36        
- row_26         | LF-225-ST                 | FULL (1.0)      | 6         
- row_26         | LF-250-ST                 | FULL (1.0)      | 20        
- row_26         | LF-55-ST                  | HALF (0.5)      | 6         
+ row_24         | LF-250-ST                 | FULL (1.0)      | 23        
+ row_24         | SH8-182-ST                | FULL (1.0)      | 1         
+ row_24         | SH8-187-ST                | FULL (1.0)      | 6         
+ row_24         | SH8-250-ST                | FULL (1.0)      | 11        
+ row_24         | SH8-61-ST                 | HALF (0.5)      | 2         
+ row_24         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_24         | SP-250-ST                 | FULL (1.0)      | 3         
+ row_24         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_25         | LF-120-ST                 | HALF (0.5)      | 1         
+ row_25         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_25         | LF-250-ST                 | FULL (1.0)      | 23        
+ row_25         | SH8-120-ST                | HALF (0.5)      | 1         
+ row_25         | SH8-124-ST                | HALF (0.5)      | 1         
+ row_25         | SH8-187-ST                | FULL (1.0)      | 7         
+ row_25         | SH8-250-ST                | FULL (1.0)      | 9         
+ row_25         | SP-120-ST                 | HALF (0.5)      | 2         
+ row_25         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_25         | SP-250-ST                 | FULL (1.0)      | 7         
+ row_26         | LF-120-ST                 | HALF (0.5)      | 1         
+ row_26         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_26         | LF-205-ST                 | FULL (1.0)      | 4         
+ row_26         | LF-250-ST                 | FULL (1.0)      | 19        
+ row_26         | LF-55-ST                  | HALF (0.5)      | 4         
  row_26         | SH8-250-ST                | FULL (1.0)      | 8         
- row_26         | SP-120-ST                 | HALF (0.5)      | 1         
- row_26         | SP-250-ST                 | FULL (1.0)      | 41        
+ row_26         | SP-185-ST                 | FULL (1.0)      | 14        
+ row_26         | SP-250-ST                 | FULL (1.0)      | 5         
+ row_26         | SP-55-ST                  | HALF (0.5)      | 1         
+ row_27         | LF-120-ST                 | HALF (0.5)      | 1         
+ row_27         | LF-185-ST                 | FULL (1.0)      | 1         
+ row_27         | LF-225-ST                 | FULL (1.0)      | 4         
  row_27         | LF-250-ST                 | FULL (1.0)      | 19        
- row_27         | SH8-114-ST                | HALF (0.5)      | 2         
- row_27         | SH8-120-ST                | HALF (0.5)      | 2         
- row_27         | SH8-124-ST                | HALF (0.5)      | 12        
- row_27         | SH8-16-ST                 | HALF (0.5)      | 2         
+ row_27         | LF-55-ST                  | HALF (0.5)      | 4         
  row_27         | SH8-250-ST                | FULL (1.0)      | 8         
  row_27         | SP-120-ST                 | HALF (0.5)      | 1         
- row_27         | SP-250-ST                 | FULL (1.0)      | 16        
- row_28         | LF-250-ST                 | FULL (1.0)      | 19        
- row_28         | SP-120-ST                 | HALF (0.5)      | 2         
- row_28         | SP-250-ST                 | FULL (1.0)      | 18        
- row_29         | LF-250-ST                 | FULL (1.0)      | 19        
- row_29         | SP-120-ST                 | HALF (0.5)      | 2         
- row_29         | SP-250-ST                 | FULL (1.0)      | 18        
- row_30         | LF-205-ST                 | FULL (1.0)      | 6         
- row_30         | LF-250-ST                 | FULL (1.0)      | 13        
- row_30         | LF-55-ST                  | HALF (0.5)      | 6         
- row_30         | SP-120-ST                 | HALF (0.5)      | 2         
- row_30         | SP-185-ST                 | FULL (1.0)      | 4         
- row_30         | SP-250-ST                 | FULL (1.0)      | 22        
- row_30         | SP-55-ST                  | HALF (0.5)      | 5         
- row_31         | LF-250-ST                 | FULL (1.0)      | 19        
- row_31         | SP-120-ST                 | HALF (0.5)      | 2         
- row_31         | SP-250-ST                 | FULL (1.0)      | 26        
- row_32         | LF-250-ST                 | FULL (1.0)      | 10        
- row_33         | LF-250-ST                 | FULL (1.0)      | 10        
- row_34         | LF-250-ST                 | FULL (1.0)      | 10        
- row_35         | LF-250-ST                 | FULL (1.0)      | 10        
- row_36         | LF-250-ST                 | FULL (1.0)      | 10        
- row_37         | LF-250-ST                 | FULL (1.0)      | 10        
- row_38         | LF-250-ST                 | FULL (1.0)      | 10        
- row_39         | LF-250-ST                 | FULL (1.0)      | 10        
- row_40         | LF-250-ST                 | FULL (1.0)      | 10        
- row_41         | LF-250-ST                 | FULL (1.0)      | 10        
- row_42         | LF-250-ST                 | FULL (1.0)      | 10        
- row_43         | LF-250-ST                 | FULL (1.0)      | 10        
- row_44         | LF-250-ST                 | FULL (1.0)      | 10        
- row_45         | LF-250-ST                 | FULL (1.0)      | 10        
- row_46         | LF-250-ST                 | FULL (1.0)      | 10        
- row_47         | LF-250-ST                 | FULL (1.0)      | 10        
- row_48         | LF-250-ST                 | FULL (1.0)      | 10        
- row_49         | LF-250-ST                 | FULL (1.0)      | 10        
- row_50         | LF-250-ST                 | FULL (1.0)      | 10        
- row_51         | LF-250-ST                 | FULL (1.0)      | 10        
- row_52         | LF-250-ST                 | FULL (1.0)      | 10        
- row_53         | LF-250-ST                 | FULL (1.0)      | 10        
- row_54         | LF-250-ST                 | FULL (1.0)      | 10        
+ row_27         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_27         | SP-250-ST                 | FULL (1.0)      | 11        
+ row_27         | SP-55-ST                  | HALF (0.5)      | 4         
+ row_28         | LF-250-ST                 | FULL (1.0)      | 14        
+ row_28         | SH8-114-ST                | HALF (0.5)      | 2         
+ row_28         | SH8-120-ST                | HALF (0.5)      | 2         
+ row_28         | SH8-124-ST                | HALF (0.5)      | 12        
+ row_28         | SH8-16-ST                 | HALF (0.5)      | 2         
+ row_28         | SH8-250-ST                | FULL (1.0)      | 8         
+ row_28         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_28         | SP-250-ST                 | FULL (1.0)      | 1         
+ row_28         | SP-55-ST                  | HALF (0.5)      | 8         
+ row_29         | LF-250-ST                 | FULL (1.0)      | 14        
+ row_29         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_29         | SP-250-ST                 | FULL (1.0)      | 10        
+ row_29         | SP-55-ST                  | HALF (0.5)      | 4         
+ row_30         | LF-250-ST                 | FULL (1.0)      | 14        
+ row_30         | SP-250-ST                 | FULL (1.0)      | 8         
+ row_30         | SP-55-ST                  | HALF (0.5)      | 10        
+ row_31         | LF-250-ST                 | FULL (1.0)      | 14        
+ row_31         | SP-185-ST                 | FULL (1.0)      | 1         
+ row_31         | SP-250-ST                 | FULL (1.0)      | 9         
+ row_31         | SP-55-ST                  | HALF (0.5)      | 5         
+ row_32         | LF-205-ST                 | FULL (1.0)      | 6         
+ row_32         | LF-250-ST                 | FULL (1.0)      | 8         
+ row_32         | LF-55-ST                  | HALF (0.5)      | 6         
+ row_32         | SP-120-ST                 | HALF (0.5)      | 1         
+ row_32         | SP-177-ST                 | FULL (1.0)      | 2         
+ row_32         | SP-250-ST                 | FULL (1.0)      | 13        
+ row_33         | LF-250-ST                 | FULL (1.0)      | 14        
+ row_33         | SP-250-ST                 | FULL (1.0)      | 11        
+ row_33         | SP-55-ST                  | HALF (0.5)      | 8         
+ row_34         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_35         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_36         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_37         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_38         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_39         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_40         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_41         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_42         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_43         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_44         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_45         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_46         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_47         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_48         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_49         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_50         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_51         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_52         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_53         | LF-250-ST                 | FULL (1.0)      | 7         
+ row_54         | LF-250-ST                 | FULL (1.0)      | 7         
 
 =====================================================================================
- МАТРИЦА ПОРЯДОВОГО РАСХОДА КИРПИЧА И ЛИТЬЯ (v77.78) 
+ МАТРИЦА ПОРЯДОВОГО РАСХОДА КИРПИЧА И ЛИТЬЯ 
 =====================================================================================
  Номер ряда | Фасад (шт) | Строит (шт) | Шамот (шт) | Литье
 -------------------------------------------------------------------------------------
- Ряд 01       | 53.5           | 85.5           | 0.0            | Литье: Нет
- Ряд 02       | 55.0           | 25.0           | 0.0            | Литье: Тоннель монтажный 250*140 (1 шт), Дверца_Поддувальная_250*140 мм (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт)
- Ряд 03       | 54.0           | 22.0           | 0.0            | Литье: Нет
- Ряд 04       | 54.0           | 22.0           | 0.0            | Литье: Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт)
- Ряд 05       | 55.0           | 23.0           | 0.0            | Литье: Нет
- Ряд 06       | 55.0           | 17.0           | 6.0            | Литье: Колосник 250*300 мм (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Тоннель монтажный 250*210 (1 шт), Дверца_Топочная_250*210 мм (1 шт), Базальтовый картон (1 шт), Базальтовый картон (1 шт)
- Ряд 07       | 54.0           | 17.0           | 0.0            | Литье: Нет
- Ряд 08       | 54.0           | 17.0           | 12.0           | Литье: Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Уголок 50-910 мм (1 шт), Уголок 50-910 мм (1 шт), Уголок 50-910 мм (1 шт), Уголок 50-910 мм (1 шт), Базальтовый картон (1 шт), Уголок 50-910 мм (1 шт)
- Ряд 09       | 59.0           | 38.0           | 0.0            | Литье: Шпилька м10-1000 мм (1 шт), Гайка м10 (1 шт), Шайба увеличенная м10 (1 шт), Шайба увеличенная м10 (1 шт), Гайка м10 (1 шт)
- Ряд 10       | 46.0           | 34.5           | 7.0            | Литье: Базальтовый картон (1 шт), Подвес прямой  Пп 60х27 (1 шт), Подвес прямой  Пп 60х27 (1 шт), Уголок 63-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 63-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 63-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 50-575 мм (1 шт), Уголок 50-315 мм (1 шт), Уголок 50-575 мм (1 шт), Базальтовый картон (1 шт), Уголок 63-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-380 мм (1 шт), Уголок 50-380 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Уголок 50-640 мм (1 шт), Труба d 120 1 мм нерж. в сборе (1 шт)
- Ряд 11       | 48.0           | 76.5           | 0.0            | Литье: Нет
- Ряд 12       | 52.5           | 61.0           | 27.0           | Литье: Базальтовый картон (1 шт), Базальтовый картон (1 шт), Базальтовый картон (1 шт)
- Ряд 13       | 23.5           | 19.5           | 11.0           | Литье: Базальтовый картон (1 шт)
- Ряд 14       | 20.0           | 4.5            | 26.0           | Литье: Нет
- Ряд 15       | 20.5           | 4.5            | 14.0           | Литье: Нет
- Ряд 16       | 21.0           | 4.5            | 10.0           | Литье: Свод кирпич шамотный клиновой ШБ-45 32 шт.
- Ряд 17       | 22.5           | 4.5            | 10.0           | Литье: Нет
- Ряд 18       | 20.0           | 4.5            | 11.0           | Литье: Нет
- Ряд 19       | 20.5           | 11.0           | 11.0           | Литье: Нет
- Ряд 20       | 20.0           | 9.0            | 24.0           | Литье: Базальтовый картон (1 шт), Базальтовый картон (1 шт)
- Ряд 21       | 33.5           | 13.0           | 30.0           | Литье: Два ближних 50х уголка свариваются между собой, Базальтовый картон (1 шт)
- Ряд 22       | 19.0           | 18.5           | 7.0            | Литье: Сварное соединение, Уголок 75-725 мм (1 шт), Уголок 75-725 мм (1 шт), Уголок 75-725 мм (1 шт), Уголок 75-725 мм (1 шт)
- Ряд 23       | 28.5           | 19.5           | 14.0           | Литье: Нет
- Ряд 24       | 29.0           | 20.0           | 14.0           | Литье: Сварное соединение, Уголок 50-770 мм (1 шт), Уголок 50-770 мм (1 шт), Уголок 50-770 мм (1 шт), Уголок 50-185  мм (1 шт), Уголок 50-185  мм (1 шт), Уголок 50-315 мм (1 шт), Уголок 50-770 мм (1 шт), Уголок 50-315 мм (1 шт), Базальтовый картон (1 шт)
- Ряд 25       | 29.5           | 38.5           | 9.0            | Литье: Нет
- Ряд 26       | 29.0           | 41.5           | 8.0            | Литье: Нет
- Ряд 27       | 19.0           | 16.5           | 17.0           | Литье: Шибер ЗВП-1 (1 шт), Шибер ЗВП-2 (1 шт), Шибер ЗВП-2 (1 шт)
- Ряд 28       | 19.0           | 19.0           | 0.0            | Литье: Нет
- Ряд 29       | 19.0           | 19.0           | 0.0            | Литье: Базальтовый картон (1 шт)
- Ряд 30       | 22.0           | 29.5           | 0.0            | Литье: Нет
- Ряд 31       | 19.0           | 27.0           | 0.0            | Литье: Нет
- Ряд 32       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 33       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 34       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 35       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 36       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 37       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 38       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 39       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 40       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 41       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 42       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 43       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 44       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 45       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 46       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 47       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 48       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 49       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 50       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 51       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 52       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 53       | 10.0           | 0.0            | 0.0            | Литье: Нет
- Ряд 54       | 10.0           | 0.0            | 0.0            | Литье: Нет
+ Ряд 01       | 32.0           | 57.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 02       | 34.5           | 26.5           | 0.0            | Литье: Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Дверца_Поддувальная_250*140 (1 шт), Тоннель монтажный 250*140 мм (1 шт)
+ Ряд 03       | 34.0           | 23.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 04       | 33.5           | 23.5           | 0.0            | Литье: Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 05       | 35.0           | 24.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 06       | 34.5           | 18.5           | 6.0            | Литье: Группа (1 шт), Группа (1 шт), Тоннель монтажный 250*210 (1 шт), Базальтовый картон (1 шт), Дверца_Топочная_250*210 (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Базальтовый картон (1 шт), Колосник 250х300 мм (1 шт)
+ Ряд 07       | 34.0           | 18.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 08       | 47.5           | 18.5           | 12.0           | Литье: Группа (1 шт), Группа (1 шт), Базальтовый картон (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 09       | 35.5           | 22.5           | 0.0            | Литье: Группа (1 шт), Уголок 50*50*5-1030 мм (1 шт), Уголок 50*50*5-1030 мм (1 шт), Уголок 50*50*5-1030 мм (1 шт)
+ Ряд 10       | 30.5           | 34.0           | 7.0            | Литье: Группа (1 шт), Группа (1 шт), Труба d-150 L = 1,0 м, 1 мм нерж. (1 шт), Труба d-150 L = 0,25 м, 1 мм нерж. (1 шт), Труба отвод 90°d-150-1 мм нерж. (1 шт), Труба отвод 90°d-150-1 мм нерж. (1 шт), Труба отвод 135°d-150-1 мм нерж. (1 шт), Труба d-150 L = 0,25 м, 1 мм нерж. (1 шт), Труба d-150 L = 0,25 м, 1 мм нерж. (1 шт), Базальтовый картон (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Базальтовый картон (1 шт), Уголок 50*50*5-900 мм (1 шт), Уголок 75*75*5-900 мм (1 шт), Уголок 50*50*5-900 мм (1 шт), Уголок 50*50*5-900 мм (1 шт), Уголок 50*50*5-900 мм (1 шт), Уголок 50*50*5-900 мм (1 шт)
+ Ряд 11       | 31.0           | 51.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 12       | 31.0           | 33.5           | 29.5           | Литье: Группа (1 шт), Группа (1 шт), Группа (1 шт), Базальтовый картон (1 шт), Базальтовый картон (1 шт), Базальтовый картон (1 шт)
+ Ряд 13       | 24.5           | 4.0            | 12.0           | Литье: Группа (1 шт), Группа (1 шт), Базальтовый картон (1 шт)
+ Ряд 14       | 21.0           | 4.0            | 12.0           | Литье: Группа (1 шт), Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 15       | 21.0           | 4.0            | 8.5            | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 16       | 21.0           | 4.0            | 8.5            | Литье: Группа (1 шт), Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 17       | 21.0           | 4.0            | 8.5            | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 18       | 21.0           | 4.0            | 8.5            | Литье: Группа (1 шт), Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 19       | 21.0           | 4.0            | 8.5            | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 20       | 35.0           | 4.0            | 24.5           | Литье: Базальтовый картон (1 шт), Базальтовый картон (1 шт), Группа (1 шт), Группа (1 шт), Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 21       | 22.0           | 4.0            | 34.0           | Литье: Базальтовый картон (1 шт), Группа (1 шт), Группа (1 шт)
+ Ряд 22       | 24.5           | 4.0            | 7.5            | Литье: Группа (1 шт), Группа (1 шт), Подвес прямой Пп 60х27#половинка (1 шт), Подвес прямой Пп 60х27#половинка (1 шт)
+ Ряд 23       | 24.5           | 4.0            | 17.0           | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 24       | 24.5           | 4.0            | 19.0           | Литье: Группа (1 шт), Группа (1 шт), Базальтовый картон (1 шт)
+ Ряд 25       | 24.5           | 9.0            | 17.0           | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 26       | 26.5           | 19.5           | 8.0            | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 27       | 26.5           | 14.5           | 8.0            | Литье: Группа (1 шт), Группа (1 шт)
+ Ряд 28       | 14.0           | 6.0            | 17.0           | Литье: Группа (1 шт), Группа (1 шт), Группа (1 шт), Шибер ЗВП-2 (1 шт), Шибер ЗВП-2 (1 шт)
+ Ряд 29       | 14.0           | 13.0           | 0.0            | Литье: Группа (1 шт), Базальтовый картон (1 шт)
+ Ряд 30       | 14.0           | 13.0           | 0.0            | Литье: Группа (1 шт)
+ Ряд 31       | 14.0           | 12.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 32       | 17.0           | 15.5           | 0.0            | Литье: Группа (1 шт)
+ Ряд 33       | 14.0           | 15.0           | 0.0            | Литье: Группа (1 шт)
+ Ряд 34       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 35       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 36       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 37       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 38       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 39       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 40       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 41       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 42       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 43       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 44       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 45       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 46       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 47       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 48       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 49       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 50       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 51       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 52       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 53       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт)
+ Ряд 54       | 7.0            | 0.0            | 0.0            | Литье: Группа (1 шт), Колпак 002 (1 шт)
 
 -------------------------------------------------------------------------------------
  ПЕЧНОЕ ЛИТЬЕ И ИНЖЕНЕРНОЕ ОБОРУДОВАНИЕ (ПОШТУЧНЫЙ УЧЕТ)
 -------------------------------------------------------------------------------------
- Кирпич шамотный клиновой ШБ-45 (SH45)              | 32                                                                                    
- Базальтовый картон лист 1200*600*5 мм              | 4                                                                                                           
- Дверка для ниши                                    | 4                             
- Дверца_Поддувальная_250*140 мм                     | 1                             
- Дверца_Топочная_250*210 мм                         | 1                             
- Колосник 250*300 мм                                | 1 
- Шибер ЗВП-1                                        | 1                             
- Шибер ЗВП-2                                        | 2                                                         
- Плита для казана 512х512 мм                        | 1                                                                                  
- Тоннель монтажный 250*140                          | 1                             
+ Базальтовый картон                                 | 14                            
+ Гайка м10                                          | 2                             
+ Группа                                             | 332                           
+ Дверка ниши (левая)                                | 1                             
+ Дверка ниши (правая )                              | 1                             
+ Дверца_Поддувальная_250*140                        | 1                             
+ Дверца_Топочная_250*210                            | 1                             
+ Колосник 250х300 мм                                | 1                             
+ Колпак 002                                         | 1                             
+ Компонент                                          | 72                            
+ Плита для казана 512х512 мм                        | 1                             
+ Подвес прямой Пп 60х27#половинка                   | 20                            
+ Подсветка                                          | 1                             
+ Различие                                           | 2                             
+ Тоннель монтажный 250*140 мм                       | 1                             
  Тоннель монтажный 250*210                          | 1                             
- Труба d 120 L = 0,25 м, 1 мм нерж.                 | 2                             
- Труба d 120 L = 1,0 м, 1 мм нерж.                  | 1                             
- Труба отвод 90°d 120 L = 1,0 м, 1 мм нерж.         | 4                             
- Уголок 50-185 мм                                   | 2                             
- Уголок 50-315 мм                                   | 3                             
- Уголок 50-380 мм                                   | 2                             
- Уголок 50-575 мм                                   | 8                             
- Уголок 50-640 мм                                   | 12                            
- Уголок 50-770 мм                                   | 4                             
- Уголок 50-910 мм                                   | 5                             
- Уголок 63-575 мм                                   | 3                             
- Уголок 63-640 мм                                   | 1                             
- Уголок 75-725 мм                                   | 4                             
- Шайба увеличенная+гайка м10                        | 6                                                         
- Шпилька м10-1000 мм                                | 3  
- Подвес прямой  Пп 60х27                            | 18   
- Мойка                                              | 1                           
+ Труба d-150 L = 0,25 м, 1 мм нерж.                 | 3                             
+ Труба d-150 L = 1,0 м, 1 мм нерж.                  | 1                             
+ Труба отвод 135°d-150-1 мм нерж.                   | 1                             
+ Труба отвод 90°d-150-1 мм нерж.                    | 2                             
+ Уголок 50*50*5-1030 мм                             | 3                             
+ Уголок 50*50*5-900 мм                              | 5                             
+ Уголок 75*75*5-900 мм                              | 1                             
+ Шайба увеличенная м10                              | 2                             
+ Шибер ЗВП-2                                        | 2                             
+ Шпилька м10-1170 мм                                | 1                             
+ четверть                                           | 12                            
+
 =====================================================================================
  ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ 
 =====================================================================================
- LF (Кирпич 1нф лицевой)                       :         1304 pcs
- SP (Кирпич 1нф строительный полнотелый)       :          762 pcs
- SH8 (Кирпич шамотный ШБ-8)                    :          268 pcs
- FINISH-TABLE (Керамогранит столешницы)        :         5.28 m2
- РАСЧЕТНЫЙ ВЕС КИРПИЧНОЙ КЛАДКИ                :         8.41 t
+ LF (Кирпич 1нф лицевой)                       :         1005 pcs
+ SP (Кирпич 1нф строительный полнотелый)       :          518 pcs
+ SH8 (Кирпич шамотный ШБ-8)                    :          273 pcs
+ FINISH-TABLE (Керамогранит столешницы)        :         3.11 m2
+ РАСЧЕТНЫЙ ВЕС КИРПИЧНОЙ КЛАДКИ                :         6.46 t
 -------------------------------------------------------------------------------------
- ПРАКТИЧЕСКИЙ РАСХОД СМЕСЕЙ (УЧЕТ ШВОВ v77.78) 
+ ПРАКТИЧЕСКИЙ РАСХОД СМЕСЕЙ (УЧЕТ ШВОВ) 
 -------------------------------------------------------------------------------------
- Глиняно-песчаная смесь (красный кирпич * 1.1 кг) :       2274 кг
- Огнеупорный мертель (шамотный кирпич * 0.6 кг) :        161 кг
+ Глиняно-песчаная смесь (красный кирпич * 1.1 кг) :       1676 кг
+ Огнеупорный мертель (шамотный кирпич * 0.6 кг) :        164 кг
 =====================================================================================
