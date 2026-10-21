@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # Encoding: UTF-8
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v78.1 — ЭКСПОРТЕР (ИСПРАВЛЕН СИНТАКСИС)
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v78.2 — ЭКСПОРТЕР (ЧИСТАЯ СПЕЦИФИКАЦИЯ)
 # ==============================================================================
 require 'fileutils'
 require 'sketchup'
@@ -53,7 +53,6 @@ module PechnikEngineeringHub
           layer_name = layer.name.downcase
           if layer_name =~ /row_(\d+)|ряд_(\d+)/
             row_num = ($1 || $2).to_i
-            # Для вида сверху — строго один текущий ряд. Для изометрии — накопительное возведение.
             layer.visible = (mode == :top ? row_num == current_row : row_num <= current_row)
           elsif layer_name.start_with?("finish_")
             layer.visible = false
@@ -127,13 +126,14 @@ module PechnikEngineeringHub
           final_sku = "#{mat_code}-#{length_mm}-ST"
           brick_data.store([current_row, final_sku], brick_data.fetch([current_row, final_sku], 0) + 1)
         
-        # 2. Обработка литья и прочего (с фильтром системных групп)
+        # 2. Обработка литья и прочего (СТРОГИЙ ФИЛЬТР)
         else
-          # Игнорируем пустые имена, временные группы и системные "Группа1", "Group12"
+          # Игнорируем пустые имена, временные группы, системные "Группа 1", "Компонент" и т.д.
           is_ignored = clean_name.empty? || 
                        clean_name_down.include?('temp') || 
                        clean_name_down.include?('init') || 
-                       clean_name_down =~ /^(group|группа)\d+$/ ||
+                       clean_name_down =~ /^(group|группа|компонент|component|различие|четверть)\s*\d*$/ ||
+                       clean_name_down.start_with?('group', 'группа', 'компонент', 'component') ||
                        clean_name_down == 'лицевой' || 
                        clean_name_down == 'забутовка' || 
                        clean_name_down == 'шамот'
@@ -144,7 +144,11 @@ module PechnikEngineeringHub
               target_idx = ($1 || $2).to_i - 1
               if target_idx.between?(0, Config::TOTAL_ROWS - 1)
                 old_cast = row_matrix[target_idx]["casting"]
-                row_matrix[target_idx]["casting"] = (old_cast == "Нет") ? "#{clean_name} (1 шт)" : "#{old_cast}, #{clean_name} (1 шт)"
+                if old_cast == "Нет"
+                  row_matrix[target_idx]["casting"] = "#{clean_name} (1 шт)"
+                elsif !old_cast.include?(clean_name)
+                  row_matrix[target_idx]["casting"] = "#{old_cast}, #{clean_name} (1 шт)"
+                end
               end
             end
           end
@@ -203,7 +207,7 @@ module PechnikEngineeringHub
     File.open(output_path_txt, "w:UTF-8") do |file|
       file.puts "[MODEL_TITLE] : #{model_title}"
       file.puts "=" * 85
-      file.puts " TOTAL PRODUCTION SPECIFICATION REPORT (v78.1) "
+      file.puts " TOTAL PRODUCTION SPECIFICATION REPORT (v78.2) "
       file.puts "=" * 85
       file.puts sprintf(" %-14s | %-25s | %-15s | %-10s", "PRODUCTION ROW", "FACTORY SKU / ELEMENT ID", "FORMAT TYPE", "QTY (PCS)")
       file.puts "-" * 85
@@ -228,8 +232,9 @@ module PechnikEngineeringHub
       
       row_matrix.each_with_index do |data, idx|
         row_title = sprintf("Ряд %02d", idx + 1)
-        file.puts sprintf(" %-12s | %-14.1f | %-14.1f | %-14.1f | Литье: %s",
-                     row_title, data["LF"], data["SP"], data["SH8"], data["casting"])
+        casting_text = data["casting"] == "Нет" ? "" : "Литье: #{data['casting']}"
+        file.puts sprintf(" %-12s | %-14.1f | %-14.1f | %-14.1f | %s",
+                     row_title, data["LF"], data["SP"], data["SH8"], casting_text)
       end
 
       unless hardware_data.empty?
@@ -244,9 +249,9 @@ module PechnikEngineeringHub
       file.puts "\n" + "=" * 85
       file.puts " ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ "
       file.puts "=" * 85
-      file.puts sprintf(" %-45s : %12s pcs", "LF (Кирпич 1нф лицевой)", totals["LF"].to_i.to_s)
-      file.puts sprintf(" %-45s : %12s pcs", "SP (Кирпич 1нф строительный полнотелый)", totals["SP"].to_i.to_s)
-      file.puts sprintf(" %-45s : %12s pcs", "SH8 (Кирпич шамотный ШБ-8)", totals["SH8"].to_i.to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "LF (Кирпич 1нф лицевой)", totals["LF"].to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "SP (Кирпич 1нф строительный полнотелый)", totals["SP"].to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "SH8 (Кирпич шамотный ШБ-8)", totals["SH8"].to_s)
       
       if total_finish_table_area > 0.0
         file.puts sprintf(" %-45s : %12.2f m2", "FINISH-TABLE (Керамогранит столешницы)", total_finish_table_area)
@@ -263,9 +268,9 @@ module PechnikEngineeringHub
     json_data = {
       model_title: model_title,
       totals: {
-        lf: totals["LF"].to_i,
-        sp: totals["SP"].to_i,
-        sh8: totals["SH8"].to_i,
+        lf: totals["LF"].ceil,
+        sp: totals["SP"].ceil,
+        sh8: totals["SH8"].ceil,
         finish_table_m2: total_finish_table_area.round(2),
         tonnage: total_tonnage,
         mix_red_kg: mix_red_kg,
@@ -279,6 +284,6 @@ module PechnikEngineeringHub
     }
     File.write(output_path_json, JSON.pretty_generate(json_data))
 
-    UI.messagebox("СМЕТНЫЙ СИНТЕЗ v78.1 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²\nДанные сохранены в TXT и JSON.")
+    UI.messagebox("СМЕТНЫЙ СИНТЕЗ v78.2 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²\nДанные сохранены в TXT и JSON.")
   end
 end

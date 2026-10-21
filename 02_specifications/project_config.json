@@ -1,1 +1,0 @@
-{"project_name":"3240-МКВ-Тест","dimensions":{"rows":30},"layers_source":{"odd_row_template":"row_01","even_row_template":"row_02"},"assemblies":[{"code":"ASM_SH8_Arch","z_row":15,"x":-500,"y":0}],"hardware":[{"code":"Дверца_Поддувальная_250_140 мм","z_row":2,"x":-500,"y":0},{"code":"Дверца_Топочная_250_210 мм","z_row":6,"x":-500,"y":0}]}
