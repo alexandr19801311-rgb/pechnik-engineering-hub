@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # Encoding: UTF-8
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v78.2 — ЭКСПОРТЕР (ЧИСТАЯ СПЕЦИФИКАЦИЯ)
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v83.1 — ЭКСПОРТЕР (БЕЗ ТЯЖЕЛОГО СЖАТИЯ)
 # ==============================================================================
 require 'fileutils'
 require 'sketchup'
@@ -15,6 +15,7 @@ module PechnikEngineeringHub
       "#{Config::BASE_DIR}/01_scenes/top_view",
       "#{Config::BASE_DIR}/01_scenes/iso_view",
       "#{Config::BASE_DIR}/01_scenes/drawings",
+      "#{Config::BASE_DIR}/01_scenes/additional_views",
       "#{Config::BASE_DIR}/02_specifications",
       "#{Config::BASE_DIR}/03_web_guide"
     ]
@@ -44,7 +45,16 @@ module PechnikEngineeringHub
 
     fixed_camera_focused = view.camera
     output_dir = File.join("#{Config::BASE_DIR}/01_scenes", sub_folder)
-    options = { width: 2480, height: 1754, transparent: true, antialias: true, compression: 9, show_summary: false }
+    
+    # Настройки экспорта
+    options = { 
+      width: 1600, 
+      height: 1130, 
+      transparent: true, 
+      antialias: true, 
+      compression: 9,
+      show_summary: false 
+    }
 
     model.start_operation("Экспорт порядовок", true)
     begin
@@ -112,7 +122,6 @@ module PechnikEngineeringHub
         clean_name = instance.definition.name.gsub(/#\d+/, '').strip
         clean_name_down = clean_name.downcase
 
-        # 1. Обработка кирпичей
         if clean_name_down.include?('кирпич') || clean_name_down.include?('palette_brick') || clean_name_down.include?('шб') || clean_name_down.include?('шамот') || clean_name =~ /^(LF|SP|SH8)/
           if clean_name =~ /^LF/ || clean_name_down.include?('лицевой') || clean_name_down.include?('облицовка')
             mat_code = "LF"
@@ -125,10 +134,7 @@ module PechnikEngineeringHub
           length_mm = (clean_name =~ /-(\d+)-/) ? $1.to_i : (instance.definition.bounds.width.to_mm).round
           final_sku = "#{mat_code}-#{length_mm}-ST"
           brick_data.store([current_row, final_sku], brick_data.fetch([current_row, final_sku], 0) + 1)
-        
-        # 2. Обработка литья и прочего (СТРОГИЙ ФИЛЬТР)
         else
-          # Игнорируем пустые имена, временные группы, системные "Группа 1", "Компонент" и т.д.
           is_ignored = clean_name.empty? || 
                        clean_name_down.include?('temp') || 
                        clean_name_down.include?('init') || 
@@ -155,7 +161,6 @@ module PechnikEngineeringHub
         end
       end
 
-      # Рекурсия
       entities_to_parse = instance.respond_to?(:definition) ? instance.definition.entities : (instance.respond_to?(:entities) ? instance.entities : nil)
       if entities_to_parse
         entities_to_parse.each { |child| scan_spec.call(child, current_row, combined_transform) if child.is_a?(Sketchup::ComponentInstance) || child.is_a?(Sketchup::Group) }
@@ -207,7 +212,7 @@ module PechnikEngineeringHub
     File.open(output_path_txt, "w:UTF-8") do |file|
       file.puts "[MODEL_TITLE] : #{model_title}"
       file.puts "=" * 85
-      file.puts " TOTAL PRODUCTION SPECIFICATION REPORT (v78.2) "
+      file.puts " TOTAL PRODUCTION SPECIFICATION REPORT (v83.1) "
       file.puts "=" * 85
       file.puts sprintf(" %-14s | %-25s | %-15s | %-10s", "PRODUCTION ROW", "FACTORY SKU / ELEMENT ID", "FORMAT TYPE", "QTY (PCS)")
       file.puts "-" * 85
@@ -249,9 +254,9 @@ module PechnikEngineeringHub
       file.puts "\n" + "=" * 85
       file.puts " ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ "
       file.puts "=" * 85
-      file.puts sprintf(" %-45s : %12s pcs", "LF (Кирпич 1нф лицевой)", totals["LF"].to_s)
-      file.puts sprintf(" %-45s : %12s pcs", "SP (Кирпич 1нф строительный полнотелый)", totals["SP"].to_s)
-      file.puts sprintf(" %-45s : %12s pcs", "SH8 (Кирпич шамотный ШБ-8)", totals["SH8"].to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "LF (Кирпич 1нф лицевой)", totals["LF"].ceil.to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "SP (Кирпич 1нф строительный полнотелый)", totals["SP"].ceil.to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "SH8 (Кирпич шамотный ШБ-8)", totals["SH8"].ceil.to_s)
       
       if total_finish_table_area > 0.0
         file.puts sprintf(" %-45s : %12.2f m2", "FINISH-TABLE (Керамогранит столешницы)", total_finish_table_area)
@@ -284,6 +289,6 @@ module PechnikEngineeringHub
     }
     File.write(output_path_json, JSON.pretty_generate(json_data))
 
-    UI.messagebox("СМЕТНЫЙ СИНТЕЗ v78.2 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²\nДанные сохранены в TXT и JSON.")
+    UI.messagebox("СМЕТНЫЙ СИНТЕЗ v83.1 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²")
   end
 end
