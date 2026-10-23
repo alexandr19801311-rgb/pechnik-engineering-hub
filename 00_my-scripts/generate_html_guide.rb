@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # Encoding: UTF-8
 # ==============================================================================
-# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v82.0 — СБОРЩИК АЛЬБОМА (ПРЕМИУМ-ОБЛОЖКА)
+# ПЕЧНОЙ ИНЖЕНЕРНЫЙ ХАБ v84.0 — СБОРЩИК АЛЬБОМА (ИСПРАВЛЕНА СТР. 2)
 # ==============================================================================
 require 'fileutils'
 require 'sketchup'
@@ -63,7 +63,6 @@ module PechnikEngineeringHub
       .header-meta { display: flex; justify-content: space-between; font-size: 8pt; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid #f3f3f3; padding-bottom: 2mm; margin-bottom: 4mm; font-weight: bold; }
       h1 { font-size: 19pt; color: #2c3e50; margin: 0 0 4mm 0; text-transform: uppercase; font-weight: 800; letter-spacing: -0.5px; }
       
-      /* Обновленный блок заголовка ряда */
       .row-header-area { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; margin-bottom: 3mm !important; }
       .row-header-area h1 { font-size: 22pt; color: #2c3e50; margin: 0; text-transform: uppercase; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; }
       
@@ -89,72 +88,35 @@ module PechnikEngineeringHub
       .img-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
       .image-title { font-size: 9.5pt; color: #7f8c8d; text-transform: uppercase; margin-bottom: 2mm; font-weight: bold; }
       
-      /* ОБНОВЛЕННАЯ ТАБЛИЦА */
       table.spec-table { width: 100%; border-collapse: collapse; margin-top: 2mm; font-size: 10pt; }
       table.spec-table th { background-color: #2c3e50; color: white; padding: 3mm; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 9pt; }
       table.spec-table td { padding: 2mm 3mm; border-bottom: 1px solid #e2e8f0; color: #334155; }
       table.spec-table td:last-child { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; }
       
-      /* КАРТОЧКИ С ИТОГАМИ */
       .dashboard-grid { display: flex; gap: 4mm; margin-top: 6mm; width: 100%; }
       .dash-card { flex: 1; background: #2c3e50; color: white; padding: 4mm; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 4px solid #d35400; }
       .dash-title { font-size: 9pt; text-transform: uppercase; opacity: 0.8; margin-bottom: 2mm; letter-spacing: 0.5px; }
       .dash-value { font-size: 20pt; font-weight: bold; color: #f39c12; }
 
-      /* ТИТУЛЬНЫЙ ЛИСТ (ПРЕМИАЛЬНЫЙ) */
       .page-cover { background: linear-gradient(135deg, #d35400 0%, #e67e22 100%); padding: 0; color: white; position: relative; overflow: hidden; }
       .page-cover::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity: 0.6; z-index: 0; }
       .cover-content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding: 25mm 25mm; box-sizing: border-box; }
-      
-      /* Верхняя часть обложки */
       .cover-top { display: flex; justify-content: space-between; align-items: flex-start; }
       .cover-logo { font-size: 14pt; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; border-bottom: 3px solid white; padding-bottom: 3mm; display: inline-block; }
-      
-      /* Центральная часть */
       .cover-center { flex: 1; display: flex; flex-direction: column; justify-content: center; margin-top: -20mm; z-index: 2; }
       .cover-title { font-size: 42pt; font-weight: 900; margin: 0 0 5mm 0; line-height: 1.1; text-shadow: 0 4px 12px rgba(0,0,0,0.2); max-width: 60%; }
       .cover-subtitle { font-size: 18pt; font-weight: 300; opacity: 0.9; max-width: 50%; }
-      
-      /* КАРТОЧКА С ФОТО НА ОБЛОЖКЕ */
-      .cover-image-card {
-          position: absolute;
-          right: 20mm;
-          bottom: 30mm;
-          transform: rotate(3deg);
-          width: 95mm;
-          background: white;
-          padding: 3mm 3mm 10mm 3mm;
-          border-radius: 4px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-          z-index: 1;
-      }
-      .cover-image-card img {
-          width: 100%;
-          height: auto;
-          display: block;
-          border-radius: 2px;
-      }
-      .cover-image-caption {
-          text-align: center;
-          color: #2c3e50;
-          font-size: 9pt;
-          font-weight: bold;
-          margin-top: 3mm;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-      }
-      
-      /* Нижняя карточка с контактами */
+      .cover-image-card { position: absolute; right: 20mm; bottom: 30mm; transform: rotate(3deg); width: 95mm; background: white; padding: 3mm 3mm 10mm 3mm; border-radius: 4px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 1; }
+      .cover-image-card img { width: 100%; height: auto; display: block; border-radius: 2px; }
+      .cover-image-caption { text-align: center; color: #2c3e50; font-size: 9pt; font-weight: bold; margin-top: 3mm; text-transform: uppercase; letter-spacing: 1px; }
       .cover-bottom { display: flex; justify-content: space-between; align-items: flex-end; z-index: 2; }
       .contact-card { background: #2c3e50; padding: 6mm; border-radius: 8px; display: flex; gap: 6mm; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
       .contact-info { display: flex; flex-direction: column; justify-content: center; }
       .contact-info div { font-size: 10pt; margin-bottom: 1.5mm; color: #bdc3c7; }
       .contact-info div b { color: white; font-size: 11pt; }
       .qr-placeholder { width: 25mm; height: 25mm; background: white; padding: 1.5mm; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-      
       .cover-footer { position: absolute; bottom: 0; left: 0; width: 100%; height: 10mm; background: #2c3e50; display: flex; justify-content: space-between; align-items: center; padding: 0 25mm; box-sizing: border-box; font-size: 9pt; color: #bdc3c7; z-index: 3; }
 
-      /* БЛОК ЗАМЕТОК */
       .notes-block { display: flex; align-items: center; width: 100%; height: 12mm; background: #fffdf9; border: 1px solid #e9d5c5; border-radius: 6px; margin-top: 3mm; padding: 0 4mm; box-sizing: border-box; font-size: 8.5pt; position: relative; }
       .notes-badge { color: #ffffff; background-color: #d35400; padding: 1mm 2.5mm; border-radius: 4px; margin-right: 4mm; text-transform: uppercase; letter-spacing: 0.7px; font-size: 7.5pt; font-weight: bold; display: flex; align-items: center; gap: 2px; }
       .notes-content { flex: 1; font-family: sans-serif; font-style: italic; color: #555; padding-top: 1mm; line-height: 1.2; }
@@ -168,7 +130,7 @@ module PechnikEngineeringHub
     html = +""
     html << "<!DOCTYPE html><html><head><meta charset='UTF-8'><style>#{styles}</style></head><body>"
     
-    # Стр. 1: Обложка (Премиальная с фото и QR-кодом)
+    # Стр. 1: Обложка
     html << "<div class='page page-cover'><div class='cover-content'>" \
             "<div class='cover-top'>" \
             "<div class='cover-logo'>PECHNIK-NOVOSIB.RU</div>" \
@@ -197,12 +159,46 @@ module PechnikEngineeringHub
             "<div class='cover-footer'><span>Инженерные традиции · Работа на поколения</span><span>Новосибирск — #{Time.now.strftime('%d.%m.%Y')}</span></div>" \
             "</div>"
 
-    # Стр. 2: Введение
+    # Стр. 2: Введение и Оглавление (ИСПРАВЛЕНА ВЕРСТКА)
     html << "<div class='page'><div class='header-meta'><span>Проект #{project_code}</span><span>Введение</span></div>" \
-            "<h1>Состав технической документации</h1><div class='intro-box'><div class='intro-text-side'>" \
-            "<p>Настоящее рабочее руководство содержит исчерпывающие архитектурные разрезы, спецификацию материалов фундаментного основания, полную карту снабжения артикулов строительной керамики и порядовые схемы сборки отопительного комплекса.</p>" \
-            "<p>Каждый этап прорисован в двух ракурсах для исключения ошибок на объекте. Кладочные работы рекомендуется вести строго в соответствии с технологическими предписаниями, контролируя толщину швов и зазоры термокомпенсации.</p></div>" \
-            "<div class='intro-quote-side'><b>Контакты автора:</b><br><br>Телефон: <b>+7 (913) 894-10-74</b><br><small>WhatsApp, звонки</small><br><br>Почта: <b>master-pechi@mail.ru</b><br>Сайт: <b>pechnik-novosib.ru</b></div></div>" \
+            "<h1>Состав технической документации</h1>" \
+            "<div style='display: flex; gap: 8mm; height: 135mm;'>" \
+            "<div style='flex: 1.5; display: flex; flex-direction: column; gap: 4mm;'>" \
+            "<div style='background: #fafafa; border: 1px solid #e2e8f0; padding: 5mm; border-radius: 8px; font-size: 10.5pt; line-height: 1.6; color: #34495e; text-align: justify;'>" \
+            "<p style='margin: 0 0 3mm 0;'>Настоящее рабочее руководство содержит исчерпывающие архитектурные разрезы, спецификацию материалов фундаментного основания, полную карту снабжения артикулов строительной керамики и порядовые схемы сборки отопительного комплекса.</p>" \
+            "<p style='margin: 0;'>Каждый этап прорисован в двух ракурсах для исключения ошибок на объекте. Кладочные работы рекомендуется вести строго в соответствии с технологическими предписаниями, контролируя толщину швов и зазоры термокомпенсации.</p>" \
+            "</div>" \
+            "<div style='background: #fff4e5; border-left: 5px solid #ff9800; padding: 5mm; border-radius: 6px;'>" \
+            "<h3 style='margin: 0 0 2mm 0; color: #b78103; font-size: 11pt; text-transform: uppercase; letter-spacing: 0.5px;'>Как пользоваться альбомом</h3>" \
+            "<div style='font-size: 10pt; line-height: 1.5; color: #5c3e00;'>" \
+            "<b>1.</b> Изучите общий вид и конструктивные разрезы (стр. 3-6).<br>" \
+            "<b>2.</b> Проверьте спецификацию и объемы материалов (стр. 8-9).<br>" \
+            "<b>3.</b> Начинайте кладку строго с <b>Ряда №1</b>. На каждой странице порядовки (стр. 11+) указан номер ряда, расход кирпича, вид сверху и 3D-изометрия." \
+            "</div>" \
+            "</div>" \
+            "</div>" \
+            "<div style='flex: 1; display: flex; flex-direction: column; gap: 4mm;'>" \
+            "<div style='background: #2c3e50; color: white; padding: 5mm; border-radius: 8px; border-bottom: 4px solid #d35400;'>" \
+            "<h3 style='margin: 0 0 3mm 0; font-size: 11pt; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2mm;'>Структура альбома</h3>" \
+            "<ul style='margin: 0; padding-left: 4mm; font-size: 9.5pt; line-height: 1.6; color: #bdc3c7;'>" \
+            "<li><b style='color: #fff;'>Стр. 3-6:</b> Виды и разрезы</li>" \
+            "<li><b style='color: #fff;'>Стр. 7:</b> Регламент кладки</li>" \
+            "<li><b style='color: #fff;'>Стр. 8-9:</b> Спецификация</li>" \
+            "<li><b style='color: #fff;'>Стр. 10:</b> Фундамент</li>" \
+            "<li><b style='color: #f39c12;'>Стр. 11-#{Config::TOTAL_ROWS + 10}:</b> Порядовки (1-#{Config::TOTAL_ROWS})</li>" \
+            "</ul>" \
+            "</div>" \
+            "<div style='background: #fdf2e9; border: 1px solid #e67e22; padding: 5mm; border-radius: 8px; flex: 1;'>" \
+            "<h3 style='margin: 0 0 3mm 0; color: #d35400; font-size: 11pt; text-transform: uppercase;'>Контакты автора</h3>" \
+            "<div style='font-size: 10pt; line-height: 1.6; color: #4a3728;'>" \
+            "Телефон: <b style='color: #2c3e50;'>+7 (913) 894-10-74</b><br>" \
+            "<small style='color: #7f8c8d;'>WhatsApp, звонки</small><br><br>" \
+            "Почта: <b style='color: #2c3e50;'>master-pechi@mail.ru</b><br>" \
+            "Сайт: <b style='color: #2c3e50;'>pechnik-novosib.ru</b>" \
+            "</div>" \
+            "</div>" \
+            "</div>" \
+            "</div>" \
             "<div class='page-number'>2</div></div>"
 
     # Стр. 3-6
@@ -275,7 +271,6 @@ module PechnikEngineeringHub
 
       html << "<div class='page'><div class='header-meta'><span>Проект #{project_code} — Страница #{cp}</span><span>Порядовая сборка</span></div><div class='row-header-area'><h1>Ряд №#{r}</h1><div class='row-badge' style='width: 78%; max-width: 78%; margin-bottom: 0;'>#{brick_text}"
       
-      # Логика вывода плашки монтажа
       if info['casting'] && info['casting'] != "Нет"
         items = info['casting'].split(',').map(&:strip)
         counts = Hash.new(0)
@@ -289,6 +284,6 @@ module PechnikEngineeringHub
 
     html << "</body></html>"
     File.open(output_html_path, "w:UTF-8") { |f| f.write(html) }
-    UI.messagebox("АЛЬБОМ v82.0 УСПЕШНО СОБРАН!\n\nОбложка с фото готова к печати.")
+    UI.messagebox("АЛЬБОМ v84.0 УСПЕШНО СОБРАН!\n\nВерстка страницы 2 исправлена.")
   end
 end
