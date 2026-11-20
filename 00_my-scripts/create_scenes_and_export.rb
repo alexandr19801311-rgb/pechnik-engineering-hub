@@ -305,7 +305,7 @@ module PechnikEngineeringHub
     end
 
     if mode == :top
-      view.camera.perspective = false
+      #view.camera.perspective = false
       layers.each do |layer|
         l_name = layer.name.downcase
         layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
