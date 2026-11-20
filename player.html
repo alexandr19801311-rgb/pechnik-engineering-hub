@@ -967,6 +967,80 @@
                     document.getElementById('modal-overlay').classList.add('open');
                 });
         }
+// ===== УЛУЧШЕНИЕ PBR-МАТЕРИАЛОВ КИРПИЧА И ЧУГУНА (РЕЛЬЕФ И БЛИКИ) =====
+function enhanceModelMaterials(rootModel) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(256, 256);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+        const grain = 115 + Math.random() * 35;
+        imgData.data[i] = grain;
+        imgData.data[i + 1] = grain;
+        imgData.data[i + 2] = grain;
+        imgData.data[i + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const brickBumpTex = new THREE.CanvasTexture(canvas);
+    brickBumpTex.wrapS = THREE.RepeatWrapping;
+    brickBumpTex.wrapT = THREE.RepeatWrapping;
+    brickBumpTex.repeat.set(8, 8);
+
+    rootModel.traverse((node) => {
+        if (!node.isMesh || !node.material) return;
+
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        const nodeName = (node.name || '').toLowerCase();
+        const parentName = (node.parent && node.parent.name ? node.parent.name : '').toLowerCase();
+
+        materials.forEach((mat) => {
+            const matName = (mat.name || '').toLowerCase();
+            const searchStr = nodeName + ' ' + matName + ' ' + parentName;
+
+            if (
+                searchStr.includes('metal_06_1k1') || searchStr.includes('*2') ||
+                searchStr.includes('дверка') || searchStr.includes('дверца') ||
+                searchStr.includes('колосник') || searchStr.includes('плита') ||
+                searchStr.includes('шибер') || searchStr.includes('труба') ||
+                searchStr.includes('уголок') || searchStr.includes('тоннель')
+            ) {
+                mat.metalness = 0.82;
+                mat.roughness = 0.34;
+                mat.envMapIntensity = 1.4;
+            }
+            else if (
+                searchStr.includes('[color_003]') || searchStr.includes('[color_007]2') ||
+                searchStr.includes('sh8-') || searchStr.includes('шамот')
+            ) {
+                mat.metalness = 0.02;
+                mat.roughness = 0.92;
+                mat.bumpMap = brickBumpTex;
+                mat.bumpScale = 0.035;
+            }
+            else if (
+                searchStr.includes('солома') || searchStr.includes('темный') ||
+                searchStr.includes('lf-') || searchStr.includes('sp-') ||
+                searchStr.includes('кирпич 1нф строительный') || searchStr.includes('кирпич')
+            ) {
+                mat.metalness = 0.04;
+                mat.roughness = 0.84;
+                mat.bumpMap = mat.map ? mat.map : brickBumpTex;
+                mat.bumpScale = 0.045;
+            }
+			         else if (mat.map) {
+             mat.metalness = 0.05;
+             mat.roughness = 0.82;
+             mat.bumpMap = mat.map;
+             mat.bumpScale = 0.04;
+         }
+
+
+            mat.needsUpdate = true;
+        });
+    });
+}
 
         function loadModel(blobUrl) {
             scene = new THREE.Scene(); scene.background = null; scene.environment = null;
@@ -1002,6 +1076,12 @@
             
             gltfLoader.load(blobUrl, function (gltf) {
                 model = gltf.scene;
+				const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+                dirLight.position.set(5, 10, 7);
+                scene.add(dirLight);
+                const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe8e4dc, 0.6);
+                scene.add(hemiLight);
+				enhanceModelMaterials(model);
                 window.__debugModel = model;
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
