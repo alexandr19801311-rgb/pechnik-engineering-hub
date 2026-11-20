@@ -291,4 +291,58 @@ module PechnikEngineeringHub
 
     UI.messagebox("СМЕТНЫЙ СИНТЕЗ v83.1 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²")
   end
+    # ============================================================================
+  # ПОДГОТОВКА ПОСТОЯННЫХ СЦЕН ДЛЯ ПАКЕТНОГО РЕНДЕРА В ENSCAPE (BATCH RENDER)
+  # ============================================================================
+  def self.prepare_enscape_scenes(mode = :iso)
+    model = Sketchup.active_model
+    view = model.active_view
+    layers = model.layers
+    pages = model.pages
+
+    pages.to_a.each do |p|
+      pages.erase(p) if p.name =~ /^row_\d+$/
+    end
+
+    if mode == :top
+      view.camera.perspective = false
+      layers.each do |layer|
+        l_name = layer.name.downcase
+        layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
+      end
+      view.refresh
+    end
+
+    fixed_camera = view.camera
+
+    model.start_operation("Создание сцен для Enscape", true)
+    begin
+      (1..Config::TOTAL_ROWS).each do |current_row|
+        layers.each do |layer|
+          layer_name = layer.name.downcase
+          if layer_name =~ /row_(\d+)|ряд_(\d+)/
+            row_num = ($1 || $2).to_i
+            layer.visible = (mode == :top ? row_num == current_row : row_num <= current_row)
+          elsif layer_name.start_with?("finish_")
+            layer.visible = false
+          elsif layer_name.start_with?("palette_") || layer_name == "untagged"
+            layer.visible = true
+          end
+        end
+
+        view.camera = fixed_camera
+        scene_name = "row_#{sprintf('%02d', current_row)}"
+
+        page = pages.add(scene_name, 127)
+        page.use_camera = true
+        page.use_hidden_layers = true
+      end
+    ensure
+      model.commit_operation
+      view.refresh
+    end
+
+    UI.messagebox("Готово! Создано #{Config::TOTAL_ROWS} сцен (row_01..row_#{sprintf('%02d', Config::TOTAL_ROWS)}).\n\nОткройте Enscape -> Batch Render, выберите сцены и сохраните в #{mode == :top ? 'top_view' : 'iso_view'}.")
+  end
+
 end

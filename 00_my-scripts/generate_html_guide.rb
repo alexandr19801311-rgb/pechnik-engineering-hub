@@ -17,7 +17,18 @@ module PechnikEngineeringHub
     notes_path = File.join(base_dir, "notes.txt")
     json_path = File.join(base_dir, "02_specifications/specification.json")
     output_html_path = File.join(base_dir, "03_web_guide/index.html")
-    
+        # Автоматически убираем префикс даты Enscape (Enscape_..._row_01.png -> row_01.png)
+    ["top_view", "iso_view"].each do |sub|
+      dir = File.join(base_dir, "01_scenes", sub)
+      next unless Dir.exist?(dir)
+      Dir.glob(File.join(dir, "Enscape_*_row_*.png")).each do |old_path|
+        if File.basename(old_path) =~ /(row_\d+\.png)$/i
+          new_path = File.join(dir, $1.downcase)
+          FileUtils.mv(old_path, new_path, force: true)
+        end
+      end
+    end
+
     FileUtils.mkdir_p(File.dirname(output_html_path))
     
     unless File.exist?(json_path)
