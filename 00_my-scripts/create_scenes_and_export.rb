@@ -93,7 +93,7 @@ module PechnikEngineeringHub
     brick_data = Hash.new(0)
     hardware_data = Hash.new(0)
     total_finish_table_area = 0.0
-    row_matrix = Array.new(Config::TOTAL_ROWS) { { "LF" => 0.0, "SP" => 0.0, "SH8" => 0.0, "casting" => "Нет" } }
+    row_matrix = Array.new(Config::TOTAL_ROWS) { { "LF" => 0.0, "LF_DARK" => 0.0, "SP" => 0.0, "SH8" => 0.0, "casting" => "Нет" } }
 
     scan_spec = ->(instance, current_row = "Вне рядов", transform = Geom::Transformation.new) do
       layer_name = instance.layer.name.downcase.strip
@@ -122,10 +122,16 @@ module PechnikEngineeringHub
         clean_name = instance.definition.name.gsub(/#\d+/, '').strip
         clean_name_down = clean_name.downcase
 
-        if clean_name_down.include?('кирпич') || clean_name_down.include?('palette_brick') || clean_name_down.include?('шб') || clean_name_down.include?('шамот') || clean_name =~ /^(LF|SP|SH8)/
-          if clean_name =~ /^LF/ || clean_name_down.include?('лицевой') || clean_name_down.include?('облицовка')
+        if clean_name_down.include?('кирпич') || clean_name_down.include?('palette_brick') || clean_name_down.include?('шб') || clean_name_down.include?('шамот') || clean_name =~ /^(LF_DARK|LF|SP|SH8)/i
+          if clean_name =~ /^LF_DARK/i ||
+             clean_name_down.include?('lf_dark') ||
+             clean_name_down.include?('lf dark') ||
+             clean_name_down.include?('тёмн') ||
+             clean_name_down.include?('темн')
+            mat_code = "LF_DARK"
+          elsif clean_name =~ /^LF/i || clean_name_down.include?('лицевой') || clean_name_down.include?('облицовка')
             mat_code = "LF"
-          elsif clean_name =~ /^SH8|^ШБ/ || clean_name_down.include?('шамот')
+          elsif clean_name =~ /^SH8|^ШБ/i || clean_name_down.include?('шамот')
             mat_code = "SH8"
           else
             mat_code = "SP"
@@ -175,7 +181,7 @@ module PechnikEngineeringHub
   def self.write_specification_report(model_title, brick_data, hardware_data, row_matrix, total_finish_table_area)
     output_path_txt = "#{Config::BASE_DIR}/02_specifications/specification_summary.txt"
     output_path_json = "#{Config::BASE_DIR}/02_specifications/specification.json"
-    totals = { "LF" => 0.0, "SP" => 0.0, "SH8" => 0.0 }
+    totals = { "LF" => 0.0, "LF_DARK" => 0.0, "SP" => 0.0, "SH8" => 0.0 }
 
     brick_data.each do |key_pair, count|
       row_str = key_pair[0]
@@ -204,9 +210,13 @@ module PechnikEngineeringHub
       totals[mat_type] += added_weight
     end
 
-    total_brick_weight = (totals["LF"] * Config::WEIGHT_LF) + (totals["SP"] * Config::WEIGHT_SP) + (totals["SH8"] * Config::WEIGHT_SH8)
+    total_brick_weight = (totals["LF"]      * Config::WEIGHT_LF)      +
+                         (totals["LF_DARK"] * Config::WEIGHT_LF_DARK) +
+                         (totals["SP"]      * Config::WEIGHT_SP)      +
+                         (totals["SH8"]     * Config::WEIGHT_SH8)
+                         
     total_tonnage = (total_brick_weight / 1000.0).round(2)
-    mix_red_kg = ((totals["LF"] + totals["SP"]) * 1.1).round(0)
+    mix_red_kg = ((totals["LF"] + totals["LF_DARK"] + totals["SP"]) * 1.1).round(0)
     mix_sh8_kg = (totals["SH8"] * 0.6).round(0)
 
     File.open(output_path_txt, "w:UTF-8") do |file|
@@ -232,14 +242,14 @@ module PechnikEngineeringHub
       file.puts "\n" + "=" * 85
       file.puts " МАТРИЦА ПОРЯДОВОГО РАСХОДА КИРПИЧА И ЛИТЬЯ "
       file.puts "=" * 85
-      file.puts " Номер ряда | Фасад (шт) | Строит (шт) | Шамот (шт) | Литье"
+      file.puts " Номер ряда | Фасад (шт) | Лиц.Темн | Строит (шт) | Шамот (шт) | Литье"
       file.puts "-" * 85
       
       row_matrix.each_with_index do |data, idx|
         row_title = sprintf("Ряд %02d", idx + 1)
         casting_text = data["casting"] == "Нет" ? "" : "Литье: #{data['casting']}"
-        file.puts sprintf(" %-12s | %-14.1f | %-14.1f | %-14.1f | %s",
-                     row_title, data["LF"], data["SP"], data["SH8"], casting_text)
+        file.puts sprintf(" %-10s | %-10.1f | %-9.1f | %-12.1f | %-11.1f | %s",
+                     row_title, data["LF"], data["LF_DARK"], data["SP"], data["SH8"], casting_text)
       end
 
       unless hardware_data.empty?
@@ -255,6 +265,7 @@ module PechnikEngineeringHub
       file.puts " ИТОГОВЫЙ СВОДНЫЙ РАСХОД МАТЕРИАЛОВ "
       file.puts "=" * 85
       file.puts sprintf(" %-45s : %12s pcs", "LF (Кирпич 1нф лицевой)", totals["LF"].ceil.to_s)
+      file.puts sprintf(" %-45s : %12s pcs", "LF_DARK (Кирпич 1нф лицевой тёмный)", totals["LF_DARK"].ceil.to_s)
       file.puts sprintf(" %-45s : %12s pcs", "SP (Кирпич 1нф строительный полнотелый)", totals["SP"].ceil.to_s)
       file.puts sprintf(" %-45s : %12s pcs", "SH8 (Кирпич шамотный ШБ-8)", totals["SH8"].ceil.to_s)
       
@@ -273,9 +284,10 @@ module PechnikEngineeringHub
     json_data = {
       model_title: model_title,
       totals: {
-        lf: totals["LF"].ceil,
-        sp: totals["SP"].ceil,
-        sh8: totals["SH8"].ceil,
+        lf:      totals["LF"].ceil,
+        lf_dark: totals["LF_DARK"].ceil,
+        sp:      totals["SP"].ceil,
+        sh8:     totals["SH8"].ceil,
         finish_table_m2: total_finish_table_area.round(2),
         tonnage: total_tonnage,
         mix_red_kg: mix_red_kg,
@@ -283,7 +295,12 @@ module PechnikEngineeringHub
       },
       hardware: hardware_data,
       rows: row_matrix.each_with_index.map do |data, idx|
-        { row: idx + 1, lf: data["LF"], sp: data["SP"], sh8: data["SH8"], casting: data["casting"] }
+        { row: idx + 1,
+          lf:      data["LF"],
+          lf_dark: data["LF_DARK"],
+          sp:      data["SP"],
+          sh8:     data["SH8"],
+          casting: data["casting"] }
       end,
       details: brick_data.map { |k, v| { row: k[0], sku: k[1], qty: v } }
     }
@@ -291,7 +308,8 @@ module PechnikEngineeringHub
 
     UI.messagebox("СМЕТНЫЙ СИНТЕЗ v83.1 ВЫПОЛНЕН!\n\nВес кирпичного ядра: #{total_tonnage} т\nПлощадь столешниц: #{total_finish_table_area.round(2)} м²")
   end
-    # ============================================================================
+
+  # ============================================================================
   # ПОДГОТОВКА ПОСТОЯННЫХ СЦЕН ДЛЯ ПАКЕТНОГО РЕНДЕРА В ENSCAPE (BATCH RENDER)
   # ============================================================================
   def self.prepare_enscape_scenes(mode = :iso)
@@ -305,7 +323,6 @@ module PechnikEngineeringHub
     end
 
     if mode == :top
-      #view.camera.perspective = false
       layers.each do |layer|
         l_name = layer.name.downcase
         layer.visible = false if l_name.start_with?("palette_") || l_name.start_with?("finish_")
@@ -344,5 +361,4 @@ module PechnikEngineeringHub
 
     UI.messagebox("Готово! Создано #{Config::TOTAL_ROWS} сцен (row_01..row_#{sprintf('%02d', Config::TOTAL_ROWS)}).\n\nОткройте Enscape -> Batch Render, выберите сцены и сохраните в #{mode == :top ? 'top_view' : 'iso_view'}.")
   end
-
 end

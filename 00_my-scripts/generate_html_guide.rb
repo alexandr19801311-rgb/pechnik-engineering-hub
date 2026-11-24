@@ -64,7 +64,7 @@ module PechnikEngineeringHub
     iron_materials = data["hardware"]
     bricks_per_row = data["rows"]
     
-    total_bricks = p_data['lf'].to_i + p_data['sp'].to_i + p_data['sh8'].to_i
+    total_bricks = p_data['lf'].to_i + p_data['lf_dark'].to_i + p_data['sp'].to_i + p_data['sh8'].to_i
 
     # CSS СТИЛИ
     styles = <<~CSS
@@ -224,6 +224,7 @@ module PechnikEngineeringHub
     # Спецификация Часть 1 и 2
     raw_items = [
       "🧱 Кирпич 1НФ Лицевой (LF артикул)|#{p_data['lf']} шт.",
+      "🧱 Кирпич 1НФ Лицевой ТЁМНЫЙ (LF_DARK артикул)|#{p_data['lf_dark']} шт.",
       "🧱 Кирпич 1НФ Строительный полнотелый (SP артикул)|#{p_data['sp']} шт.",
       "🧱 Кирпич Шамотный огнеупорный (ШБ-8 / SH8)|#{p_data['sh8']} шт."
     ]
@@ -268,8 +269,9 @@ module PechnikEngineeringHub
       cp = r + 10
       info = bricks_per_row.find { |x| x["row"] == r } || { "lf" => 0, "sp" => 0, "sh8" => 0, "casting" => "Нет" }
       
-      pts = []
+       pts = []
       pts << "Лицевой LF: #{info['lf'].to_i} шт." if info['lf'].to_i > 0
+      pts << "Лицевой LF_dark: #{info['lf_dark'].to_i} шт." if info['lf_dark'].to_i > 0
       pts << "Строительный SP: #{info['sp'].to_i} шт." if info['sp'].to_i > 0
       pts << "Шамотный ШБ-8: #{info['sh8'].to_i} шт." if info['sh8'].to_i > 0
       brick_text = pts.join(" | ")

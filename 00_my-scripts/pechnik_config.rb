@@ -25,12 +25,14 @@ module PechnikEngineeringHub
 
     # --- ВЕСА И РАСХОД ---
     WEIGHT_LF  = 3.7
+	WEIGHT_LF_DARK = 3.7
     WEIGHT_SP  = 3.5
     WEIGHT_SH8 = 3.4
     
     # Пороги для определения половинок (в мм)
     HALF_THRESHOLD = {
       "LF" => 120,
+	  "LF_DARK" => 120,
       "SP" => 120,
       "SH8" => 124
     }
